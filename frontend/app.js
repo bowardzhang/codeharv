@@ -67,6 +67,8 @@ monaco.languages.registerCompletionItemProvider('python', {
       { label: 'plant', kind: monaco.languages.CompletionItemKind.Function, insertText: 'plant("${1:crop}", ${2:x}, ${3:y})', insertTextRules: 4 },
       { label: 'harvest', kind: monaco.languages.CompletionItemKind.Function, insertText: 'harvest(${1:x}, ${2:y})', insertTextRules: 4 },
       { label: 'water', kind: monaco.languages.CompletionItemKind.Function, insertText: 'water(${1:x}, ${2:y})', insertTextRules: 4 },
+      { label: 'fertilize', kind: monaco.languages.CompletionItemKind.Function, insertText: 'fertilize(${1:x}, ${2:y})', insertTextRules: 4 },
+      { label: 'is_mature', kind: monaco.languages.CompletionItemKind.Function, insertText: 'is_mature(${1:x}, ${2:y})', insertTextRules: 4 },
       { label: 'wait', kind: monaco.languages.CompletionItemKind.Function, insertText: 'wait(${1:seconds})', insertTextRules: 4 },
       { label: 'clear', kind: monaco.languages.CompletionItemKind.Function, insertText: 'clear()', insertTextRules: 4 }
     ]
@@ -685,11 +687,11 @@ function showTooltip(p, x, y) { // show info of a cell in column x and row y
       <b>Empty Plot</b><br>
       📍 Position: (${x}, ${y})<br>
       💧 Water: ${Math.round((cell?.water ?? 0) * 100)}%<br>
-      🌱 Nutrition: ${Math.round((cell?.nutrition ?? 0) * 100)}%
+      🌱 Nutrition: ${Math.round((cell?.nutrient ?? 0) * 100)}%
     `;
   } else {
     const waterPct = Math.round((cell.water ?? 0) * 100);
-    const nutritionPct = Math.round((cell.nutrition ?? 0) * 100);
+    const nutritionPct = Math.round((cell.nutrient ?? 0) * 100);
 
     let maturityDisplay = "";
     if ((cell.maturity ?? 0) >= 1) {

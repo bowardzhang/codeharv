@@ -13,7 +13,7 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 
 - 🧠 **Learn Python by coding** — use real Python syntax to control the farm
 - 🌱 **Grid-based farming system** with crops, growth, and resources
-- 💧 Actions: **plant, water, fertilize, harvest**
+- 💧 Actions: **plant, water, fertilize, wait, harvest**
 - ⏱ **Time-based crop growth** with maturity simulation
 - 📊 Script execution statistics (cost, gain, ROI)
 - 🏆 Best ROI tracking as an achievement
@@ -48,7 +48,8 @@ Each crop has different:
 ```python
 plant("wheat", 2, 3)
 water(2, 3)
-water(2, 3)
+fertilize(2, 3)
+wait(4)
 
 if is_mature(2, 3):
     harvest(2, 3)

@@ -93,10 +93,14 @@ class Executor:
             ev = self.farm.plant(*args)
         elif func == "water":
             ev = self.farm.water(*args)
+        elif func == "fertilize":
+            ev = self.farm.fertilize(*args)
         elif func == "harvest":
             ev = self.farm.harvest(*args)
         elif func == "wait":
             ev = self.farm.wait(*args)
+        elif func == "is_mature":
+            return self.farm.is_mature(*args)
         elif func == "clear":
             ev = self.farm.clear_field(*args)
         else:

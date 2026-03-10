@@ -54,6 +54,7 @@ FIELD_RATIO = {
 
 GOLD_INITIAL = 500
 WATER_COST = 2
+FERTILIZE_COST = 3
 EXEC_INTERVAL = 100 # in milliseconds
 
 # ---------- Farm World ----------
@@ -102,6 +103,12 @@ class Farm:
             "x": x,
             "y": y,
             "cell": self.grid[y][x],
+            "gold": self.gold,
+        }
+
+    def _farm_event(self, event_type: str) -> Dict[str, Any]:
+        return {
+            "type": event_type,
             "gold": self.gold,
         }
 
@@ -169,6 +176,37 @@ class Farm:
         self.grid[y][x] = self._empty_cell() # clear the plant in the grid cell
 
         return self._cell_event(x, y)
+
+    def fertilize(self, x: int, y: int) -> Dict[str, Any]:
+        cell = self._cell(x, y)
+
+        if cell["type"] is None:
+            raise ValueError("Nothing to fertilize")
+
+        if self.gold < FERTILIZE_COST:
+            raise ValueError("Not enough gold")
+
+        self.gold -= FERTILIZE_COST
+        self.script_cost += FERTILIZE_COST
+
+        cell["nutrient"] = min(1.0, cell["nutrient"] + 0.35)
+        cell["maturity"] = min(
+            1.0,
+            cell["maturity"] + 0.18 * cell["nutrient"]
+        )
+
+        return self._cell_event(x, y)
+
+    def wait(self, seconds: int | float = 1) -> Dict[str, Any]:
+        if seconds is None or seconds <= 0:
+            raise ValueError("wait(seconds) expects a positive number")
+
+        self.tick(float(seconds))
+        return self._farm_event("wait")
+
+    def is_mature(self, x: int, y: int) -> bool:
+        cell = self._cell(x, y)
+        return bool(cell["type"]) and cell["maturity"] >= 1.0
     
     # ------ Empty farm field ------
     def clear_field(self)  -> Dict[str, Any]:
@@ -195,8 +233,11 @@ class Farm:
                     continue
 
                 crop_cfg = CROPS[cell["type"]]
-                growth = (crop_cfg["grow_speed"] * cell["water"] * dt)
+                growth = (crop_cfg["grow_speed"] * cell["water"] * (0.5 + cell["nutrient"]) * dt)
                 cell["maturity"] = min(1.0, cell["maturity"] + growth)
+
+                # nutrients slowly decay over time
+                cell["nutrient"] = max(0.1, cell["nutrient"] - 0.015 * dt)
     
     # ---------- Snapshot ----------
     def snapshot(self) -> Dict[str, Any]:

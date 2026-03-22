@@ -1,6 +1,7 @@
 # farm.py
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional, Set
 import time
+import random
 
 # ---------- Crop Config ----------
 CROPS = {
@@ -39,6 +40,21 @@ CROPS = {
         "harvest_gain": 18,
         "grow_speed": 0.10,
     },
+    "sunflower": {
+        "plant_cost": 12,
+        "harvest_gain": 30,
+        "grow_speed": 0.07,
+    },
+    "pumpkin": {
+        "plant_cost": 15,
+        "harvest_gain": 40,
+        "grow_speed": 0.04,
+    },
+    "golden_apple": {
+        "plant_cost": 25,
+        "harvest_gain": 60,
+        "grow_speed": 0.03,
+    },
 }
 
 GRID_SIZE = 6
@@ -46,51 +62,277 @@ BACKGROUND = "assets/farm_bg.webp"
 
 # 0~1 field border in proportion of canvas
 FIELD_RATIO = {
-    "topLeft":     [0.425, 0.545], #[0.42, 0.54],
-    "topRight":    [0.755, 0.625], # [0.78, 0.63]
-    "bottomLeft":  [0.165, 0.625], # [0.17, 0.63]
-    "bottomRight": [0.565, 0.815], # [0.59, 0.84]
+    "topLeft":     [0.425, 0.545],
+    "topRight":    [0.755, 0.625],
+    "bottomLeft":  [0.165, 0.625],
+    "bottomRight": [0.565, 0.815],
 }
 
 GOLD_INITIAL = 500
 WATER_COST = 2
 FERTILIZE_COST = 3
-EXEC_INTERVAL = 100 # in milliseconds
+EXEC_INTERVAL = 100  # in milliseconds
+
+# ---------- Weather System ----------
+WEATHERS = {
+    "sunny":   {"growth_mult": 1.3, "emoji": "\u2600\ufe0f", "desc": "Sunny - crops grow faster!"},
+    "rainy":   {"growth_mult": 1.5, "emoji": "\U0001f327\ufe0f", "desc": "Rainy - free watering & fast growth!"},
+    "cloudy":  {"growth_mult": 1.0, "emoji": "\u2601\ufe0f", "desc": "Cloudy - normal growth"},
+    "windy":   {"growth_mult": 0.8, "emoji": "\U0001f4a8", "desc": "Windy - slightly slower growth"},
+    "drought": {"growth_mult": 0.5, "emoji": "\U0001f3dc\ufe0f", "desc": "Drought - very slow growth, water evaporates!"},
+}
+
+WEATHER_CHANGE_INTERVAL = 30.0  # farm-time seconds between weather changes
+
+# ---------- XP & Level System ----------
+LEVELS = [
+    {"level": 1,  "xp_needed": 0,    "title": "Seed Planter"},
+    {"level": 2,  "xp_needed": 50,   "title": "Sprout Tender"},
+    {"level": 3,  "xp_needed": 150,  "title": "Garden Helper"},
+    {"level": 4,  "xp_needed": 300,  "title": "Farm Hand"},
+    {"level": 5,  "xp_needed": 500,  "title": "Crop Master"},
+    {"level": 6,  "xp_needed": 800,  "title": "Harvest King"},
+    {"level": 7,  "xp_needed": 1200, "title": "Python Farmer"},
+    {"level": 8,  "xp_needed": 1800, "title": "Code Wizard"},
+    {"level": 9,  "xp_needed": 2500, "title": "Farm Tycoon"},
+    {"level": 10, "xp_needed": 3500, "title": "Cyber Legend"},
+]
+
+# ---------- Achievements ----------
+ACHIEVEMENTS = [
+    {"id": "first_plant",  "title": "Green Thumb",   "desc": "Plant your first crop",         "emoji": "\U0001f331"},
+    {"id": "first_harvest","title": "Reaper",         "desc": "Harvest your first crop",       "emoji": "\U0001f33e"},
+    {"id": "gold_100",     "title": "Gold Digger",    "desc": "Accumulate 100 gold",           "emoji": "\U0001f4b0"},
+    {"id": "gold_1000",    "title": "Rich Farmer",    "desc": "Accumulate 1000 gold",          "emoji": "\U0001f3e6"},
+    {"id": "full_field",   "title": "Land Baron",     "desc": "Fill every cell with crops",    "emoji": "\U0001f3de\ufe0f"},
+    {"id": "roi_50",       "title": "Investor",       "desc": "Achieve 50% ROI",               "emoji": "\U0001f4c8"},
+    {"id": "roi_200",      "title": "Tycoon",         "desc": "Achieve 200% ROI",              "emoji": "\U0001f680"},
+    {"id": "level_5",      "title": "Halfway There",  "desc": "Reach level 5",                 "emoji": "\u2b50"},
+    {"id": "level_10",     "title": "Max Level",      "desc": "Reach level 10",                "emoji": "\U0001f451"},
+    {"id": "all_crops",    "title": "Botanist",       "desc": "Plant every type of crop",      "emoji": "\U0001f9ec"},
+    {"id": "missions_5",   "title": "Task Master",    "desc": "Complete 5 missions",           "emoji": "\U0001f4cb"},
+    {"id": "missions_all", "title": "Completionist",  "desc": "Complete all missions",         "emoji": "\U0001f3c6"},
+    {"id": "speed_demon",  "title": "Speed Demon",     "desc": "Complete a script in under 50 farm-time seconds", "emoji": "\u26a1"},
+    {"id": "diverse_farmer","title": "Diverse Farmer", "desc": "Plant all crop types including new ones", "emoji": "\U0001f308"},
+    {"id": "big_spender",  "title": "Big Spender",     "desc": "Spend 500+ gold in one script", "emoji": "\U0001f4b3"},
+]
+
+# ---------- Missions ----------
+# check field is a string that maps to a method on Farm: _check_mission_<check>
+MISSIONS = [
+    {
+        "id": "m1",
+        "title": "First Seed",
+        "desc": "Plant your first crop! Use: plant(\"grass\", 0, 0)",
+        "hint": "plant(\"grass\", 0, 0)",
+        "xp_reward": 20,
+        "gold_reward": 50,
+        "concept": "Function Calls",
+        "check": "any_planted",
+    },
+    {
+        "id": "m2",
+        "title": "Water the Garden",
+        "desc": "Plant grass and water it. Use water(x, y) after planting.",
+        "hint": "plant(\"grass\", 0, 0)\nwater(0, 0)",
+        "xp_reward": 25,
+        "gold_reward": 30,
+        "concept": "Sequential Execution",
+        "check": "any_watered",
+    },
+    {
+        "id": "m3",
+        "title": "First Harvest",
+        "desc": "Grow a crop to maturity and harvest it! Use wait() to let time pass.",
+        "hint": "plant(\"grass\", 0, 0)\nwater(0, 0)\nwait(10)\nharvest(0, 0)",
+        "xp_reward": 40,
+        "gold_reward": 50,
+        "concept": "Complete Workflow",
+        "check": "any_harvested",
+    },
+    {
+        "id": "m4",
+        "title": "Row Farmer",
+        "desc": "Use a for loop to plant a whole row of crops!",
+        "hint": "for x in range(6):\n    plant(\"wheat\", x, 0)",
+        "xp_reward": 60,
+        "gold_reward": 80,
+        "concept": "For Loops",
+        "check": "row_planted",
+    },
+    {
+        "id": "m5",
+        "title": "Smart Farmer",
+        "desc": "Use is_mature() with if to check before harvesting.",
+        "hint": "plant(\"wheat\", 0, 0)\nwater(0, 0)\nwait(15)\nif is_mature(0, 0):\n    harvest(0, 0)",
+        "xp_reward": 60,
+        "gold_reward": 80,
+        "concept": "If Conditions",
+        "check": None,  # checked via code analysis in executor
+    },
+    {
+        "id": "m6",
+        "title": "Full Field",
+        "desc": "Use nested for loops to fill the entire 6x6 farm!",
+        "hint": "for y in range(6):\n    for x in range(6):\n        plant(\"grass\", x, y)",
+        "xp_reward": 80,
+        "gold_reward": 100,
+        "concept": "Nested Loops",
+        "check": "full_field",
+    },
+    {
+        "id": "m7",
+        "title": "Profit Master",
+        "desc": "Achieve a positive ROI! Earn more gold than you spend.",
+        "hint": "clear()\nfor x in range(6):\n    plant(\"grass\", x, 0)\n    water(x, 0)\nwait(20)\nfor x in range(6):\n    harvest(x, 0)",
+        "xp_reward": 80,
+        "gold_reward": 100,
+        "concept": "Optimization",
+        "check": "positive_roi",
+    },
+    {
+        "id": "m8",
+        "title": "Crop Diversity",
+        "desc": "Plant at least 4 different types of crops on your farm.",
+        "hint": "plant(\"grass\", 0, 0)\nplant(\"wheat\", 1, 0)\nplant(\"carrot\", 2, 0)\nplant(\"tomato\", 3, 0)",
+        "xp_reward": 60,
+        "gold_reward": 80,
+        "concept": "String Arguments",
+        "check": "crop_diversity",
+    },
+    {
+        "id": "m9",
+        "title": "Weather Watcher",
+        "desc": "Use get_weather() in your script to check the weather!",
+        "hint": "w = get_weather()\nprint(w)",
+        "xp_reward": 50,
+        "gold_reward": 60,
+        "concept": "Variables & Return Values",
+        "check": None,  # checked via code analysis
+    },
+    {
+        "id": "m10",
+        "title": "Automation Expert",
+        "desc": "Write a script with at least 5 different function calls to automate your farm completely.",
+        "hint": "clear()\nfor x in range(6):\n    plant(\"wheat\", x, 0)\n    water(x, 0)\n    fertilize(x, 0)\nwait(10)\nfor x in range(6):\n    if is_mature(x, 0):\n        harvest(x, 0)",
+        "xp_reward": 100,
+        "gold_reward": 150,
+        "concept": "Combining Everything",
+        "check": None,  # checked via code analysis
+    },
+    {
+        "id": "m11",
+        "title": "Function Creator",
+        "desc": "Define and use your own function with def!",
+        "hint": "def plant_row(crop, y):\n    for x in range(6):\n        plant(crop, x, y)\n\nplant_row(\"grass\", 0)",
+        "xp_reward": 80,
+        "gold_reward": 120,
+        "concept": "Defining Functions",
+        "check": None,  # checked via code analysis
+    },
+    {
+        "id": "m12",
+        "title": "The Collector",
+        "desc": "Harvest 10+ crops in one script for a big payday!",
+        "hint": "for y in range(2):\n    for x in range(6):\n        plant(\"grass\", x, y)\n        water(x, y)\nwait(20)\nfor y in range(2):\n    for x in range(6):\n        harvest(x, y)",
+        "xp_reward": 90,
+        "gold_reward": 130,
+        "concept": "Loops & Counting",
+        "check": "collector",
+    },
+    {
+        "id": "m13",
+        "title": "Weather Adapter",
+        "desc": "Use get_weather() with if/elif to adapt your farming strategy!",
+        "hint": "w = get_weather()\nif w == \"sunny\":\n    plant(\"wheat\", 0, 0)\nelif w == \"rainy\":\n    plant(\"carrot\", 0, 0)\nelif w == \"drought\":\n    plant(\"grass\", 0, 0)",
+        "xp_reward": 70,
+        "gold_reward": 100,
+        "concept": "Elif Chains",
+        "check": None,  # checked via code analysis
+    },
+    {
+        "id": "m14",
+        "title": "Crop Calculator",
+        "desc": "Use print() to display profit calculations with arithmetic!",
+        "hint": "cost = 5\ngain = 10\nprofit = gain - cost\nprint(f\"Profit: {profit}\")",
+        "xp_reward": 60,
+        "gold_reward": 80,
+        "concept": "Expressions & Output",
+        "check": None,  # checked via code analysis
+    },
+    {
+        "id": "m15",
+        "title": "Master Automator",
+        "desc": "Fill the entire field, water all, wait, harvest all for maximum profit!",
+        "hint": "clear()\nfor y in range(6):\n    for x in range(6):\n        plant(\"grass\", x, y)\n        water(x, y)\nwait(30)\nfor y in range(6):\n    for x in range(6):\n        if is_mature(x, y):\n            harvest(x, y)",
+        "xp_reward": 120,
+        "gold_reward": 200,
+        "concept": "Complete Automation",
+        "check": "master_automator",
+    },
+]
 
 # ---------- Farm World ----------
 class Farm:
     def __init__(self, size: int = GRID_SIZE):
         self.grid_size = size
-        self.gold = GOLD_INITIAL  # initial gold
-        self.time = 0.0  # farm time in second
-        
+        self.gold = GOLD_INITIAL
+        self.time = 0.0  # farm time in seconds
+
         # ---- script execution stats ----
         self.script_cost = 0
         self.script_gain = 0
-        
+
         self.best_roi = 0.0
+
+        # ---- weather ----
+        self.weather = "sunny"
+        self._weather_timer = 0.0  # time since last weather change
+
+        # ---- XP & level ----
+        self.xp = 0
+        self.level = 1
+
+        # ---- missions ----
+        self.completed_missions: Set[str] = set()
+        self.active_mission_idx = 0
+
+        # ---- achievements ----
+        self.unlocked_achievements: Set[str] = set()
+
+        # ---- crop history (for achievement tracking) ----
+        self.planted_crop_types: Set[str] = set()
+
+        # ---- script action history (for mission tracking) ----
+        self.has_planted = False
+        self.has_watered = False
+        self.has_harvested = False
+        self.max_planted_in_row0 = 0  # max simultaneous plants in row 0
+
+        # ---- print log (for user print() calls) ----
+        self.print_log: List[str] = []
 
         self.grid = [
             [self._empty_cell() for _ in range(size)]
             for _ in range(size)
         ]
-        
+
     @staticmethod
     def get_config():
         return {
             "grid": GRID_SIZE,
             "background": BACKGROUND,
             "field_ratio": FIELD_RATIO,
-            "exec_interval": EXEC_INTERVAL
+            "exec_interval": EXEC_INTERVAL,
         }
 
     # ---------- Cell ----------
     def _empty_cell(self) -> Dict[str, Any]:
         return {
-            "type": None,       # crop name
-            "maturity": 0.0,    # 0.0 ~ 1.0
-            "water": 0.0,       # 0.0 ~ 1.0
-            "nutrient": 0.5,    # reserved for future
+            "type": None,
+            "maturity": 0.0,
+            "water": 0.0,
+            "nutrient": 0.5,
         }
 
     def _cell(self, x: int, y: int) -> Dict[str, Any]:
@@ -111,6 +353,214 @@ class Farm:
             "type": event_type,
             "gold": self.gold,
         }
+
+    # ---------- Weather ----------
+    def get_weather(self) -> str:
+        return self.weather
+
+    def _maybe_change_weather(self, dt: float) -> None:
+        self._weather_timer += dt
+        if self._weather_timer >= WEATHER_CHANGE_INTERVAL:
+            self._weather_timer = 0.0
+            self.weather = random.choice(list(WEATHERS.keys()))
+
+    # ---------- XP & Level ----------
+    def add_xp(self, amount: int) -> Optional[Dict[str, Any]]:
+        """Add XP and check for level-up. Returns level_up info dict or None."""
+        self.xp += amount
+        new_level = self.level
+        for lvl in reversed(LEVELS):
+            if self.xp >= lvl["xp_needed"]:
+                new_level = lvl["level"]
+                break
+        if new_level > self.level:
+            old_level = self.level
+            self.level = new_level
+            title = LEVELS[new_level - 1]["title"]
+            return {
+                "old_level": old_level,
+                "new_level": new_level,
+                "title": title,
+            }
+        return None
+
+    # ---------- Mission Checks ----------
+    def _check_mission_any_planted(self) -> bool:
+        return self.has_planted
+
+    def _check_mission_any_watered(self) -> bool:
+        return self.has_planted and self.has_watered
+
+    def _check_mission_any_harvested(self) -> bool:
+        return self.has_harvested and self.script_gain > 0
+
+    def _check_mission_row_planted(self) -> bool:
+        # Check current state OR historical max
+        current = sum(1 for cell in self.grid[0] if cell["type"]) >= 6
+        return current or self.max_planted_in_row0 >= 6
+
+    def _check_mission_full_field(self) -> bool:
+        return all(cell["type"] is not None for row in self.grid for cell in row)
+
+    def _check_mission_positive_roi(self) -> bool:
+        return self.script_gain > self.script_cost and self.script_cost > 0
+
+    def _check_mission_crop_diversity(self) -> bool:
+        types = set(cell["type"] for row in self.grid for cell in row if cell["type"])
+        return len(types) >= 4
+
+    def _check_mission_collector(self) -> bool:
+        return self.script_gain >= 50
+
+    def _check_mission_master_automator(self) -> bool:
+        return self.script_gain >= 100
+
+    def check_mission_by_name(self, check_name: str) -> bool:
+        method = getattr(self, f"_check_mission_{check_name}", None)
+        if method is None:
+            return False
+        return method()
+
+    def check_missions(self, called_functions: Optional[Set[str]] = None,
+                       code_text: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Check if active (and subsequent) missions are complete.
+        Returns list of newly completed mission info dicts.
+        """
+        results = []
+
+        while self.active_mission_idx < len(MISSIONS):
+            mission = MISSIONS[self.active_mission_idx]
+            mid = mission["id"]
+
+            if mid in self.completed_missions:
+                self.active_mission_idx += 1
+                continue
+
+            completed = False
+
+            if mission["check"] is not None:
+                completed = self.check_mission_by_name(mission["check"])
+            else:
+                # Code-analysis missions
+                completed = self._check_code_mission(mid, called_functions, code_text)
+
+            if not completed:
+                break
+
+            # Mission complete!
+            self.completed_missions.add(mid)
+            self.gold += mission["gold_reward"]
+            level_up = self.add_xp(mission["xp_reward"])
+
+            results.append({
+                "mission_id": mid,
+                "title": mission["title"],
+                "xp_reward": mission["xp_reward"],
+                "gold_reward": mission["gold_reward"],
+                "concept": mission["concept"],
+                "level_up": level_up,
+            })
+
+            self.active_mission_idx += 1
+
+        return results
+
+    def _check_code_mission(self, mission_id: str,
+                            called_functions: Optional[Set[str]],
+                            code_text: Optional[str]) -> bool:
+        """Check missions that require code analysis."""
+        cf = called_functions or set()
+        ct = code_text or ""
+
+        if mission_id == "m5":
+            # Smart Farmer: must use is_mature and if
+            return "is_mature" in cf and "if " in ct
+
+        if mission_id == "m9":
+            # Weather Watcher: must call get_weather
+            return "get_weather" in cf
+
+        if mission_id == "m10":
+            # Automation Expert: at least 5 distinct function calls
+            return len(cf) >= 5
+
+        if mission_id == "m11":
+            # Function Creator: must define a function with def
+            return "def " in ct
+
+        if mission_id == "m13":
+            # Weather Adapter: must use get_weather and elif
+            return "get_weather" in cf and "elif" in ct
+
+        if mission_id == "m14":
+            # Crop Calculator: must use print and arithmetic
+            has_print = "print" in cf
+            has_arithmetic = any(op in ct for op in ["+", "-", "*", "/"])
+            return has_print and has_arithmetic
+
+        return False
+
+    def get_missions_data(self) -> List[Dict[str, Any]]:
+        """Return serializable mission info (no lambdas/functions) for frontend."""
+        data = []
+        for i, m in enumerate(MISSIONS):
+            data.append({
+                "id": m["id"],
+                "title": m["title"],
+                "desc": m["desc"],
+                "hint": m["hint"],
+                "xp_reward": m["xp_reward"],
+                "gold_reward": m["gold_reward"],
+                "concept": m["concept"],
+                "completed": m["id"] in self.completed_missions,
+                "active": i == self.active_mission_idx,
+            })
+        return data
+
+    # ---------- Achievements ----------
+    def check_achievements(self) -> List[Dict[str, Any]]:
+        """Check and return newly unlocked achievements."""
+        newly_unlocked = []
+
+        checks = {
+            "first_plant": self.has_planted,
+            "first_harvest": self.has_harvested,
+            "gold_100": self.gold >= 100,
+            "gold_1000": self.gold >= 1000,
+            "full_field": self._check_mission_full_field(),
+            "roi_50": (
+                (self.script_gain - self.script_cost) / self.script_cost >= 0.5
+                if self.script_cost > 0 else False
+            ),
+            "roi_200": (
+                (self.script_gain - self.script_cost) / self.script_cost >= 2.0
+                if self.script_cost > 0 else False
+            ),
+            "level_5": self.level >= 5,
+            "level_10": self.level >= 10,
+            "all_crops": len(self.planted_crop_types) >= len(CROPS),
+            "missions_5": len(self.completed_missions) >= 5,
+            "missions_all": len(self.completed_missions) >= len(MISSIONS),
+            "speed_demon": self.time < 50 and self.script_gain > 0,
+            "diverse_farmer": len(self.planted_crop_types) >= len(CROPS),
+            "big_spender": self.script_cost >= 500,
+        }
+
+        for ach in ACHIEVEMENTS:
+            aid = ach["id"]
+            if aid in self.unlocked_achievements:
+                continue
+            if checks.get(aid, False):
+                self.unlocked_achievements.add(aid)
+                newly_unlocked.append({
+                    "id": aid,
+                    "title": ach["title"],
+                    "desc": ach["desc"],
+                    "emoji": ach["emoji"],
+                })
+
+        return newly_unlocked
 
     # ---------- API ----------
     def plant(self, crop: str, x: int, y: int) -> Dict[str, Any]:
@@ -135,6 +585,15 @@ class Farm:
             "nutrient": 0.5,
         })
 
+        self.planted_crop_types.add(crop)
+        self.has_planted = True
+
+        # Track row 0 fill count for mission
+        row0_count = sum(1 for c in self.grid[0] if c["type"])
+        self.max_planted_in_row0 = max(self.max_planted_in_row0, row0_count)
+
+        self.add_xp(2)
+
         return self._cell_event(x, y)
 
     def water(self, x: int, y: int) -> Dict[str, Any]:
@@ -157,6 +616,9 @@ class Farm:
             cell["maturity"] + 0.15 * cell["water"]
         )
 
+        self.has_watered = True
+        self.add_xp(1)
+
         return self._cell_event(x, y)
 
     def harvest(self, x: int, y: int) -> Dict[str, Any]:
@@ -173,7 +635,10 @@ class Farm:
 
         self.gold += gain
         self.script_gain += gain
-        self.grid[y][x] = self._empty_cell() # clear the plant in the grid cell
+        self.grid[y][x] = self._empty_cell()
+
+        self.has_harvested = True
+        self.add_xp(5)
 
         return self._cell_event(x, y)
 
@@ -195,6 +660,8 @@ class Farm:
             cell["maturity"] + 0.18 * cell["nutrient"]
         )
 
+        self.add_xp(2)
+
         return self._cell_event(x, y)
 
     def wait(self, seconds: int | float = 1) -> Dict[str, Any]:
@@ -207,25 +674,30 @@ class Farm:
     def is_mature(self, x: int, y: int) -> bool:
         cell = self._cell(x, y)
         return bool(cell["type"]) and cell["maturity"] >= 1.0
-    
+
     # ------ Empty farm field ------
-    def clear_field(self)  -> Dict[str, Any]:
+    def clear_field(self) -> Dict[str, Any]:
         for y in range(self.grid_size):
             for x in range(self.grid_size):
                 self.grid[y][x] = self._empty_cell()
-                
+
         return self._cell_event(0, 0)
-    
+
     # ---------- Time ----------
     def tick(self, dt: float) -> None:
         """
-        Update farm field as time eclipses.
+        Update farm field as time elapses.
         dt: seconds
         """
         if dt <= 0:
             return
         self.time += dt
-        
+
+        # Weather change check
+        self._maybe_change_weather(dt)
+
+        weather_mult = WEATHERS[self.weather]["growth_mult"]
+
         for y in range(self.grid_size):
             for x in range(self.grid_size):
                 cell = self.grid[y][x]
@@ -233,22 +705,61 @@ class Farm:
                     continue
 
                 crop_cfg = CROPS[cell["type"]]
-                growth = (crop_cfg["grow_speed"] * cell["water"] * (0.5 + cell["nutrient"]) * dt)
+                growth = (
+                    crop_cfg["grow_speed"]
+                    * cell["water"]
+                    * (0.5 + cell["nutrient"])
+                    * dt
+                    * weather_mult
+                )
                 cell["maturity"] = min(1.0, cell["maturity"] + growth)
 
                 # nutrients slowly decay over time
                 cell["nutrient"] = max(0.1, cell["nutrient"] - 0.015 * dt)
-    
+
+                # Rainy weather: slowly add water automatically
+                if self.weather == "rainy":
+                    cell["water"] = min(1.0, cell["water"] + 0.02 * dt)
+
+                # Drought: water evaporates faster
+                if self.weather == "drought":
+                    cell["water"] = max(0.0, cell["water"] - 0.03 * dt)
+
+    # ---------- Save Data ----------
+    def save_data(self) -> Dict[str, Any]:
+        """Return minimal state for client-side persistence."""
+        return {
+            "gold": self.gold,
+            "xp": self.xp,
+            "level": self.level,
+            "completed_missions": list(self.completed_missions),
+            "unlocked_achievements": list(self.unlocked_achievements),
+            "planted_crop_types": list(self.planted_crop_types),
+            "best_roi": self.best_roi,
+            "active_mission_idx": self.active_mission_idx,
+        }
+
     # ---------- Snapshot ----------
     def snapshot(self) -> Dict[str, Any]:
-        """
-        Full world state (for reconnect / reset)
-        """
+        """Full world state (for reconnect / reset)."""
         return {
             "type": "snapshot",
             "grid": self.grid,
             "gold": self.gold,
             "time": self.time,
+            "weather": self.weather,
+            "weather_info": WEATHERS[self.weather],
+            "xp": self.xp,
+            "level": self.level,
+            "level_title": LEVELS[self.level - 1]["title"],
+            "levels": LEVELS,
+            "missions": self.get_missions_data(),
+            "achievements": [
+                {**ach, "unlocked": ach["id"] in self.unlocked_achievements}
+                for ach in ACHIEVEMENTS
+            ],
+            "print_log": self.print_log,
+            "save": self.save_data(),
         }
 
     def get_script_result(self):
@@ -262,6 +773,5 @@ class Farm:
         return {
             "cost": cost,
             "gain": gain,
-            "roi": roi
+            "roi": roi,
         }
-

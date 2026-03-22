@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cyber Farm</title>
+  <title>Cyber Farm - Learn Python by Farming</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -10,28 +10,32 @@
 
 <header>
   <div class="logo">🌱 Cyber Farm</div>
+  <div class="header-center">
+    <div id="weatherDisplay" class="weather-badge">☀️ Sunny</div>
+    <div id="levelDisplay" class="level-badge">
+      <span id="levelText">Lv.1 Seed Planter</span>
+      <div class="xp-bar"><div id="xpFill" class="xp-fill" style="width:0%"></div></div>
+      <span id="xpText" class="xp-text">0 XP</span>
+    </div>
+  </div>
   <nav>
-    <button>Login / Register</button>
+    <button id="cropBookBtn" title="Crop Encyclopedia">📖 Crops</button>
+    <button id="achieveBtn" title="Achievements">🏆 Awards</button>
     <div id="aboutWrapper">
       <button id="aboutBtn">About</button>
-
       <div id="aboutPanel" class="hidden">
         <div class="about-content">
           <b>Cyber Farm</b><br>
           Learn Python programming through a farming game 🌱<br><br>
-
           <span class="icon">👤︎</span> Author: bowardzhang<br>
           📧 bowardzhang[at]gmail[dot]com<br><br>
-
           © 2026 Cyber Farm<br>All rights reserved.
         </div>
       </div>
     </div>
+    <button id="darkModeBtn" title="Toggle Dark Mode">🌙</button>
     <select id="langSelect">
       <option value="en">English</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-      <option value="es">Español</option>
       <option value="zh">简体中文</option>
     </select>
   </nav>
@@ -51,7 +55,6 @@
     <div class="console" id="console"></div>
   </div>
 
-  <!-- panel dragging bar -->
   <div id="divider"></div>
 
   <div class="panel" id="rightPanel">
@@ -63,10 +66,95 @@
       <canvas id="farmCanvas"></canvas>
     </div>
     <div id="cellTooltip" class="tooltip hidden"></div>
+
+    <div id="missionPanel">
+      <div class="mission-header">
+        <span>📋 Current Mission</span>
+        <span id="missionProgress" class="mission-progress">0 / 10</span>
+      </div>
+      <div id="missionContent">
+        <div id="missionTitle" class="mission-title"></div>
+        <div id="missionDesc" class="mission-desc"></div>
+        <div id="missionConcept" class="mission-concept"></div>
+        <div id="missionReward" class="mission-reward"></div>
+        <div class="mission-hint-wrapper">
+          <button id="hintBtn" class="hint-btn">💡 Show Hint</button>
+          <button id="loadHintBtn" class="hint-btn" style="margin-left:6px;">📝 Load into Editor</button>
+          <pre id="missionHint" class="mission-hint hidden"></pre>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ================= Monaco Editor (ESM) ================= -->
+<!-- Crop Encyclopedia Modal -->
+<div id="cropModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📖 Crop Encyclopedia</h2>
+      <button class="modal-close" id="cropModalClose">&times;</button>
+    </div>
+    <div id="cropList" class="crop-list"></div>
+    <div class="modal-footer">
+      <h3>🎮 Available Functions</h3>
+      <div class="func-ref">
+        <code>plant("crop", x, y)</code> - Plant a crop at position (x, y)<br>
+        <code>water(x, y)</code> - Water the crop (cost: 2g)<br>
+        <code>fertilize(x, y)</code> - Fertilize (cost: 3g)<br>
+        <code>harvest(x, y)</code> - Harvest a mature crop<br>
+        <code>wait(seconds)</code> - Wait for time to pass<br>
+        <code>is_mature(x, y)</code> - Returns True/False<br>
+        <code>get_weather()</code> - Get current weather<br>
+        <code>get_status(x, y)</code> - Get crop status at (x, y)<br>
+        <code>clear()</code> - Clear the entire field<br>
+        <code>print(value)</code> - Print to console<br>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Achievements Modal -->
+<div id="achieveModal" class="modal hidden">
+  <div class="modal-content achieve-modal-content">
+    <div class="modal-header">
+      <h2>🏆 Achievements</h2>
+      <button class="modal-close" id="achieveModalClose">&times;</button>
+    </div>
+    <div id="achieveList" class="achieve-list"></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Welcome Overlay (first-time) -->
+<div id="welcomeOverlay" class="modal">
+  <div class="modal-content welcome-content">
+    <div style="text-align:center;padding:24px 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">🌱</div>
+      <h2 style="margin:0 0 8px 0;font-size:22px;">Welcome to Cyber Farm!</h2>
+      <p style="color:#475569;font-size:14px;line-height:1.6;margin:0 0 16px 0;">
+        Learn Python programming by growing a virtual farm.<br>
+        Write Python scripts to plant, water, and harvest crops.<br>
+        Complete missions to level up and unlock achievements!
+      </p>
+      <div style="text-align:left;background:#f8fafc;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.7;">
+        <b>Quick Start:</b><br>
+        1. Read the current mission in the bottom-right panel<br>
+        2. Write Python code in the editor on the left<br>
+        3. Click <b>▶ Run</b> or press <b>Ctrl+Enter</b> to execute<br>
+        4. Watch your farm come alive!
+      </div>
+      <button id="welcomeStartBtn" onclick="this.closest('.modal').classList.add('hidden');localStorage.setItem('cyberfarm_welcomed','1');" style="
+        background:linear-gradient(135deg,#22c55e,#16a34a);
+        color:#fff;border:none;border-radius:8px;
+        padding:10px 32px;font-size:15px;font-weight:700;
+        cursor:pointer;transition:all 0.2s;
+      ">Start Farming!</button>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="app.js"></script>
 
 </body>

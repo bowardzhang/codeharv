@@ -13,35 +13,40 @@ class ScriptError(Exception):
         return self.message
 
 class Executor:
-    MAX_STEPS = 200
+    MAX_STEPS = 500
     MAX_TIMEOUT = 1800
+    MAX_WHILE_ITERATIONS = 200
     TIME_PER_STEP = 1.0
-    
-    def __init__(self, tree, farm, is_manual = False):
+
+    def __init__(self, tree, farm, is_manual=False):
         self.stack = list(reversed(tree.body))
         self.ctx = {}
         self.farm = farm
         self.steps = 0
-        
+        self.code_text = ast.unparse(tree) if hasattr(ast, "unparse") else ""
+
+        # Track which functions were called (for mission checking)
+        self.called_functions: set = set()
+
         # mark start time only if all script runs automatically in one batch
         self.start_time = None if is_manual else time.time()
 
     def step(self):
         if not self.stack:
             return None  # terminate code execution
-        
+
         self.steps += 1
         node = self.stack.pop()
-        
+
         if self.start_time and time.time() - self.start_time > self.MAX_TIMEOUT:
             raise ScriptError(node, "Script timeout")
-        
+
         if self.steps > self.MAX_STEPS:
             raise ScriptError(node, "Script exceeded maximum execution steps")
-        
+
         # farm time elapses 1 second for each execution step
         self.farm.tick(self.TIME_PER_STEP)
-        
+
         # if / else
         if isinstance(node, ast.If):
             condition = self.eval(node.test)
@@ -49,7 +54,7 @@ class Executor:
             for stmt in reversed(body):
                 self.stack.append(stmt)
             return self.step()
-            
+
         # for loop
         if isinstance(node, ast.For):
             iterable = self.eval(node.iter)
@@ -66,10 +71,32 @@ class Executor:
                 )
             return self.step()
 
+        # while loop (with iteration guard)
+        if isinstance(node, ast.While):
+            return self._exec_while(node)
+
         # assignment
         if isinstance(node, ast.Assign):
             value = self.eval(node.value)
             self.ctx[node.targets[0].id] = value
+            return self.step()
+
+        # augmented assignment (+=, -=, *=, etc.)
+        if isinstance(node, ast.AugAssign):
+            target_name = node.target.id
+            current = self.ctx.get(target_name, 0)
+            value = self.eval(node.value)
+            result = self._apply_binop(node.op, current, value, node)
+            self.ctx[target_name] = result
+            return self.step()
+
+        # pass (no-op)
+        if isinstance(node, ast.Pass):
+            return self.step()
+
+        # user-defined function
+        if isinstance(node, ast.FunctionDef):
+            self._define_function(node)
             return self.step()
 
         # expr(function call)
@@ -77,7 +104,124 @@ class Executor:
             return self.exec_expr(node.value)
 
         raise ScriptError(node, "Unsupported syntax")
-        
+
+    def _exec_while(self, node):
+        """Execute a while loop with iteration guard."""
+        iterations = 0
+        last_ev = None
+        while iterations < self.MAX_WHILE_ITERATIONS:
+            condition = self.eval(node.test)
+            if not condition:
+                break
+            iterations += 1
+            # Execute body statements sequentially inline
+            for stmt in node.body:
+                self.steps += 1
+                if self.steps > self.MAX_STEPS:
+                    raise ScriptError(node, "Script exceeded maximum execution steps")
+                self.farm.tick(self.TIME_PER_STEP)
+
+                ev = self._step_one(stmt)
+                if ev is not None:
+                    last_ev = ev
+        else:
+            raise ScriptError(node, f"While loop exceeded {self.MAX_WHILE_ITERATIONS} iterations")
+
+        # After while finishes, continue with next in stack
+        if last_ev is not None:
+            return last_ev
+        return self.step()
+
+    def _define_function(self, node):
+        """Store a user-defined function in self.ctx as a callable wrapper."""
+        func_name = node.name
+        param_names = [arg.arg for arg in node.args.args]
+        body = node.body
+
+        def user_func(*args):
+            # Save current context and set parameters
+            saved = dict(self.ctx)
+            for pname, pval in zip(param_names, args):
+                self.ctx[pname] = pval
+            # Execute body statements
+            result = None
+            for stmt in body:
+                if isinstance(stmt, ast.Return):
+                    result = self.eval(stmt.value) if stmt.value else None
+                    break
+                self.steps += 1
+                if self.steps > self.MAX_STEPS:
+                    raise ScriptError(node, "Script exceeded maximum execution steps")
+                self.farm.tick(self.TIME_PER_STEP)
+                ev = self._step_one(stmt)
+                if ev is not None:
+                    result = ev
+            # Restore context (but keep any new variables from outer scope)
+            for pname in param_names:
+                if pname in saved:
+                    self.ctx[pname] = saved[pname]
+                elif pname in self.ctx:
+                    del self.ctx[pname]
+            return result
+
+        self.ctx[func_name] = user_func
+
+    def _step_one(self, node):
+        """Execute a single node inline (used by while loop)."""
+        if isinstance(node, ast.If):
+            condition = self.eval(node.test)
+            body = node.body if condition else node.orelse
+            last_ev = None
+            for stmt in body:
+                ev = self._step_one(stmt)
+                if ev is not None:
+                    last_ev = ev
+            return last_ev
+
+        if isinstance(node, ast.For):
+            iterable = self.eval(node.iter)
+            target = node.target.id
+            last_ev = None
+            for value in iterable:
+                self.ctx[target] = value
+                for stmt in node.body:
+                    self.steps += 1
+                    if self.steps > self.MAX_STEPS:
+                        raise ScriptError(node, "Script exceeded maximum execution steps")
+                    self.farm.tick(self.TIME_PER_STEP)
+                    ev = self._step_one(stmt)
+                    if ev is not None:
+                        last_ev = ev
+            return last_ev
+
+        if isinstance(node, ast.While):
+            return self._exec_while(node)
+
+        if isinstance(node, ast.Assign):
+            value = self.eval(node.value)
+            self.ctx[node.targets[0].id] = value
+            return None
+
+        if isinstance(node, ast.AugAssign):
+            target_name = node.target.id
+            current = self.ctx.get(target_name, 0)
+            value = self.eval(node.value)
+            result = self._apply_binop(node.op, current, value, node)
+            self.ctx[target_name] = result
+            return None
+
+        if isinstance(node, ast.Pass):
+            return None
+
+        if isinstance(node, ast.FunctionDef):
+            self._define_function(node)
+            return None
+
+        if isinstance(node, ast.Expr):
+            return self.exec_expr(node.value)
+
+        raise ScriptError(node, "Unsupported syntax")
+
     def exec_expr(self, node):
         if isinstance(node, ast.Call):
             return self.exec_call(node)
@@ -87,7 +231,16 @@ class Executor:
         func = node.func.id
         args = [self.eval(arg) for arg in node.args]
 
-        line_no = getattr(node, "lineno", None)  # current line number
+        line_no = getattr(node, "lineno", None)
+
+        self.called_functions.add(func)
+
+        # Check user-defined functions first
+        if func in self.ctx and callable(self.ctx[func]):
+            result = self.ctx[func](*args)
+            if isinstance(result, dict):
+                result["line"] = line_no
+            return result
 
         if func == "plant":
             ev = self.farm.plant(*args)
@@ -103,6 +256,21 @@ class Executor:
             return self.farm.is_mature(*args)
         elif func == "clear":
             ev = self.farm.clear_field(*args)
+        elif func == "get_weather":
+            return self.farm.get_weather()
+        elif func == "print":
+            msg = " ".join(str(a) for a in args)
+            self.farm.print_log.append(msg)
+            return None  # print doesn't produce a farm event
+        elif func == "len":
+            if len(args) != 1:
+                raise ScriptError(node, "len() takes exactly 1 argument")
+            return len(args[0])
+        elif func == "range":
+            try:
+                return range(*args)
+            except TypeError:
+                raise ScriptError(node, "Invalid range() arguments")
         else:
             raise ScriptError(node, f"Unknown function: {func}")
 
@@ -110,35 +278,198 @@ class Executor:
         if isinstance(ev, dict):
             ev["line"] = line_no
         return ev
-        
+
+    def _apply_binop(self, op, left, right, node):
+        if isinstance(op, ast.Add): return left + right
+        if isinstance(op, ast.Sub): return left - right
+        if isinstance(op, ast.Mult): return left * right
+        if isinstance(op, ast.Div):
+            if right == 0:
+                raise ScriptError(node, "Division by zero")
+            return left / right
+        if isinstance(op, ast.Mod):
+            if right == 0:
+                raise ScriptError(node, "Modulo by zero")
+            return left % right
+        if isinstance(op, ast.FloorDiv):
+            if right == 0:
+                raise ScriptError(node, "Division by zero")
+            return left // right
+        raise ScriptError(node, "Unsupported operator")
+
     def eval(self, node):
         if isinstance(node, ast.Constant):
             return node.value
 
         if isinstance(node, ast.Name):
-            return self.ctx.get(node.id)
+            if node.id in self.ctx:
+                return self.ctx[node.id]
+            # Built-in constants
+            if node.id == "True":
+                return True
+            if node.id == "False":
+                return False
+            if node.id == "None":
+                return None
+            return None
 
-        if isinstance(node, ast.Call) \
-            and isinstance(node.func, ast.Name) and node.func.id == "range":
-            args = [self.eval(a) for a in node.args]
-            try:
-                return range(*args)
-            except TypeError:
-                raise ScriptError(node, "Invalid range() arguments")
+        # Function calls in expressions (range, is_mature, get_weather, len, etc.)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            func_name = node.func.id
+            if func_name == "range":
+                args = [self.eval(a) for a in node.args]
+                try:
+                    return range(*args)
+                except TypeError:
+                    raise ScriptError(node, "Invalid range() arguments")
+            if func_name == "len":
+                args = [self.eval(a) for a in node.args]
+                if len(args) != 1:
+                    raise ScriptError(node, "len() takes exactly 1 argument")
+                return len(args[0])
+            if func_name == "str":
+                args = [self.eval(a) for a in node.args]
+                return str(args[0]) if args else ""
+            if func_name == "int":
+                args = [self.eval(a) for a in node.args]
+                return int(args[0]) if args else 0
+            if func_name == "float":
+                args = [self.eval(a) for a in node.args]
+                return float(args[0]) if args else 0.0
+            if func_name == "bool":
+                args = [self.eval(a) for a in node.args]
+                return bool(args[0]) if args else False
+            if func_name == "abs":
+                args = [self.eval(a) for a in node.args]
+                if len(args) != 1:
+                    raise ScriptError(node, "abs() takes exactly 1 argument")
+                return abs(args[0])
+            if func_name == "max":
+                args = [self.eval(a) for a in node.args]
+                if not args:
+                    raise ScriptError(node, "max() requires at least 1 argument")
+                if len(args) == 1 and hasattr(args[0], '__iter__'):
+                    return max(args[0])
+                return max(*args)
+            if func_name == "min":
+                args = [self.eval(a) for a in node.args]
+                if not args:
+                    raise ScriptError(node, "min() requires at least 1 argument")
+                if len(args) == 1 and hasattr(args[0], '__iter__'):
+                    return min(args[0])
+                return min(*args)
+            if func_name == "round":
+                args = [self.eval(a) for a in node.args]
+                if len(args) == 1:
+                    return round(args[0])
+                elif len(args) == 2:
+                    return round(args[0], args[1])
+                else:
+                    raise ScriptError(node, "round() takes 1 or 2 arguments")
+            if func_name == "type":
+                args = [self.eval(a) for a in node.args]
+                if len(args) != 1:
+                    raise ScriptError(node, "type() takes exactly 1 argument")
+                t = type(args[0]).__name__
+                return t
+            # Check user-defined functions in context
+            if func_name in self.ctx and callable(self.ctx[func_name]):
+                args = [self.eval(a) for a in node.args]
+                self.called_functions.add(func_name)
+                return self.ctx[func_name](*args)
+            # Delegate to exec_call for farm functions
+            return self.exec_call(node)
 
         if isinstance(node, ast.Call):
             return self.exec_call(node)
 
+        # Binary operations: +, -, *, /, %, //
+        if isinstance(node, ast.BinOp):
+            left = self.eval(node.left)
+            right = self.eval(node.right)
+            return self._apply_binop(node.op, left, right, node)
+
+        # Unary operations: not, -, +
+        if isinstance(node, ast.UnaryOp):
+            operand = self.eval(node.operand)
+            if isinstance(node.op, ast.Not):
+                return not operand
+            if isinstance(node.op, ast.USub):
+                return -operand
+            if isinstance(node.op, ast.UAdd):
+                return +operand
+            raise ScriptError(node, "Unsupported unary operator")
+
+        # Comparison operators
         if isinstance(node, ast.Compare):
             left = self.eval(node.left)
-            right = self.eval(node.comparators[0])
-            op = node.ops[0]
+            # Support chained comparisons
+            for op, comparator in zip(node.ops, node.comparators):
+                right = self.eval(comparator)
+                if isinstance(op, ast.Gt):
+                    result = left > right
+                elif isinstance(op, ast.Lt):
+                    result = left < right
+                elif isinstance(op, ast.Eq):
+                    result = left == right
+                elif isinstance(op, ast.GtE):
+                    result = left >= right
+                elif isinstance(op, ast.LtE):
+                    result = left <= right
+                elif isinstance(op, ast.NotEq):
+                    result = left != right
+                else:
+                    raise ScriptError(node, "Unsupported comparison")
+                if not result:
+                    return False
+                left = right
+            return True
 
-            if isinstance(op, ast.Gt): return left > right
-            if isinstance(op, ast.Lt): return left < right
-            if isinstance(op, ast.Eq): return left == right
+        # Boolean operators: and, or
+        if isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                result = True
+                for value in node.values:
+                    result = self.eval(value)
+                    if not result:
+                        return result
+                return result
+            if isinstance(node.op, ast.Or):
+                result = False
+                for value in node.values:
+                    result = self.eval(value)
+                    if result:
+                        return result
+                return result
+            raise ScriptError(node, "Unsupported boolean operator")
 
-            raise ScriptError(node, "Unsupported comparison")
+        # List literals
+        if isinstance(node, ast.List):
+            return [self.eval(elt) for elt in node.elts]
+
+        # Tuple literals
+        if isinstance(node, ast.Tuple):
+            return tuple(self.eval(elt) for elt in node.elts)
+
+        # f-strings (JoinedStr)
+        if isinstance(node, ast.JoinedStr):
+            parts = []
+            for value in node.values:
+                if isinstance(value, ast.Constant):
+                    parts.append(str(value.value))
+                elif isinstance(value, ast.FormattedValue):
+                    parts.append(str(self.eval(value.value)))
+                else:
+                    parts.append(str(self.eval(value)))
+            return "".join(parts)
+
+        # Subscript (indexing): e.g. my_list[0]
+        if isinstance(node, ast.Subscript):
+            obj = self.eval(node.value)
+            idx = self.eval(node.slice)
+            try:
+                return obj[idx]
+            except (IndexError, KeyError, TypeError) as e:
+                raise ScriptError(node, str(e))
 
         raise ScriptError(node, f"Unsupported expression: {type(node)}")
-

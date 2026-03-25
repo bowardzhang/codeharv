@@ -14,17 +14,26 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 ### Core Gameplay
 - 🧠 **Learn Python by coding** — use real Python syntax to control the farm
 - 🌱 **Grid-based farming system** (6×6) with crops, growth, and resources
-- 💧 Actions: **plant, water, fertilize, wait, harvest, clear**
+- 💧 Actions: **plant, water, fertilize, wait, harvest, sell, clear**
 - ⏱ **Time-based crop growth** with maturity simulation
 - 🌦 **Dynamic weather system** — sunny, rainy, cloudy, windy, drought affect growth
+- 🌸 **Season system** — spring, summer, autumn, winter cycle with seasonal growth modifiers
+- 💹 **Market system** — dynamic crop prices that fluctuate over time; sell at market for profit
+- 🐛 **Pest system** — bugs, weeds, and frost can appear on crops, slowing growth
 - 📊 Script execution statistics (cost, gain, ROI)
+- 🔊 **Sound effects** — audio feedback for planting, harvesting, level-ups, and errors
 
 ### Mission & Progression System
-- 📋 **15 progressive missions** teaching Python concepts step by step:
-  - Function calls → Sequential execution → For loops → If conditions → Nested loops → User-defined functions → And more
+- 📋 **25 progressive missions** teaching Python concepts step by step:
+  - Function calls → Sequential execution → For loops → If conditions → Nested loops → User-defined functions → While loops → Market trading → Pest control → Seasons → Data analysis → Dictionaries → List operations → Algorithm optimization
 - ⭐ **XP & Level system** — 10 levels from "Seed Planter" to "Cyber Legend"
-- 🏆 **15 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, etc.)
+- 🏆 **21 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Season Surfer, Market Whale, Pest Free, Winter Survivor, and more)
 - 💡 **Hint system** with "Load into Editor" for guided learning
+
+### User Accounts
+- 👤 **Registration & Login** — create an account to save progress to the cloud
+- ☁️ **Cloud save** — game state syncs to server so you can continue on any device
+- 🔒 **Secure authentication** — SHA-256 password hashing with per-user salts
 
 ### Python Features Supported
 - Variables, assignment, augmented assignment (`+=`, `-=`, etc.)
@@ -32,17 +41,22 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 - `if`/`elif`/`else` conditionals
 - User-defined functions with `def`, parameters, and `return`
 - F-strings, list/tuple literals, subscript indexing
+- Dictionaries and dictionary methods
 - Boolean/comparison/arithmetic operators
+- String and list methods (`.keys()`, `.values()`, `.items()`, `.get()`, `.upper()`, `.lower()`, `.append()`, `.sort()`, etc.)
 - Built-in functions: `print`, `len`, `str`, `int`, `float`, `bool`, `abs`, `max`, `min`, `round`, `type`, `range`
 
 ### UI & Experience
 - 🌙 **Dark mode** with toggle
 - 🌐 **Bilingual** — English / 简体中文 language switching
 - 💾 **Game state persistence** — progress saves to localStorage and restores on reload
-- 🖥 **Visual feedback**: crop growth stages (seedling → sprout → mature), harvest particle effects, floating gold animations
+- ☁️ **Cloud save** — optional server-side persistence with user accounts
+- 🖥 **Visual feedback**: crop growth stages (seedling → sprout → mature), harvest particle effects, floating gold animations, pest indicators
 - 📖 **Crop Encyclopedia** with stats, ROI, and profit info
+- 💹 **Market panel** with real-time price display and trend indicators
 - ⌨️ **Monaco Editor** with Python autocomplete and syntax highlighting
 - 🔔 **Toast notifications** for mission completions, achievements, and level-ups
+- 🔄 **Auto-reconnect** — WebSocket automatically reconnects on connection loss
 
 ---
 
@@ -114,6 +128,50 @@ elif w == "drought":
     plant("grass", 0, 0)
 ```
 
+### Market Trading
+```python
+for x in range(6):
+    plant("wheat", x, 0)
+    water(x, 0)
+wait(20)
+for x in range(6):
+    price = get_price("wheat")
+    if price > 12:
+        sell(x, 0)
+    else:
+        harvest(x, 0)
+```
+
+### Pest Management
+```python
+for x in range(6):
+    plant("carrot", x, 0)
+    water(x, 0)
+wait(15)
+pests = get_pests()
+for p in pests:
+    remove_pest(p[0], p[1])
+wait(10)
+for x in range(6):
+    if is_mature(x, 0):
+        sell(x, 0)
+```
+
+### Season-Aware Strategy
+```python
+season = get_season()
+crop = "wheat"
+if season == "spring":
+    crop = "strawberry"
+elif season == "summer":
+    crop = "sunflower"
+elif season == "autumn":
+    crop = "pumpkin"
+for x in range(6):
+    plant(crop, x, 0)
+    water(x, 0)
+```
+
 Scripts can be executed:
 - **Step-by-step** (manual mode) — learn what each line does
 - **Automatically** (run-all mode) — watch your farm come alive
@@ -132,6 +190,19 @@ Scripts can be executed:
 | `wait(seconds)` | Advance farm time | Free |
 | `is_mature(x, y)` | Check if crop is ready | Free |
 | `get_weather()` | Get current weather | Free |
+| `get_season()` | Get current season | Free |
+| `get_status(x, y)` | Get crop status at position | Free |
+| `get_gold()` | Get current gold amount | Free |
+| `get_time()` | Get current farm time | Free |
+| `get_all_mature()` | List all mature crop positions | Free |
+| `get_all_planted()` | List all planted crops | Free |
+| `count_crops()` | Count number of planted crops | Free |
+| `sell(x, y)` | Sell crop at market price | Free |
+| `get_price("crop")` | Get current market price | Free |
+| `get_market()` | Get all market prices | Free |
+| `has_pest(x, y)` | Check for pest at position | Free |
+| `remove_pest(x, y)` | Remove pest from position | 5g |
+| `get_pests()` | List all pest positions | Free |
 | `clear()` | Clear entire field | Free |
 | `print(value)` | Print to console | Free |
 
@@ -151,6 +222,8 @@ Scripts can be executed:
 - FastAPI
 - WebSocket for real-time communication
 - Custom Python AST-based script executor (safe sandboxed execution)
+- SQLite for user accounts and cloud save
+- Pydantic for request validation
 
 ---
 
@@ -196,14 +269,20 @@ The long-term vision is to evolve Cyber Farm into a code-driven sandbox game whe
 ## 🛣 Roadmap
 
 - [x] Weather and seasonal effects
-- [x] Mission system with progressive Python concepts
-- [x] XP, levels, and achievements
+- [x] Season system (spring/summer/autumn/winter)
+- [x] Mission system with 25 progressive Python concepts
+- [x] XP, levels, and achievements (21 achievements)
 - [x] Dark mode
 - [x] Bilingual support (EN/CN)
-- [x] Game state persistence
+- [x] Game state persistence (localStorage + cloud save)
 - [x] User-defined functions (`def`)
-- [ ] User accounts and cloud-based persistent farms
-- [ ] More advanced Python features (classes, dictionaries)
+- [x] User accounts and cloud-based persistent farms
+- [x] Market system with dynamic prices
+- [x] Pest system (bugs, weeds, frost)
+- [x] Dictionary and list method support
+- [x] Sound effects
+- [x] WebSocket auto-reconnection
+- [ ] More advanced Python features (classes, imports)
 - [ ] Script challenges and puzzles with leaderboards
 - [ ] Multiplayer / farm visiting
 - [ ] Mobile-friendly responsive UI

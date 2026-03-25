@@ -996,3 +996,259 @@ body.dark-mode .welcome-content {
   background: #1e293b;
   color: #e2e8f0;
 }
+
+/* ==========================================================================
+   RESPONSIVE STYLES
+   Note: Ensure your HTML includes <meta name="viewport" content="width=device-width, initial-scale=1">
+   ========================================================================== */
+
+/* ---------- Tablet (max-width: 900px) ---------- */
+@media (max-width: 900px) {
+  header {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .header-center {
+    display: none;
+  }
+
+  nav button,
+  nav select {
+    padding: 5px 8px;
+  }
+
+  .content {
+    flex-direction: column;
+  }
+
+  #divider {
+    display: none;
+  }
+
+  #leftPanel {
+    width: 100%;
+    min-width: 0;
+    max-height: 45vh;
+  }
+
+  #rightPanel {
+    width: 100%;
+    flex: 1;
+    height: auto;
+  }
+
+  .console {
+    height: 80px;
+  }
+}
+
+/* ---------- Mobile (max-width: 600px) ---------- */
+@media (max-width: 600px) {
+  header {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .logo {
+    font-size: 17px;
+  }
+
+  /* Hide text labels in About and dark-mode toggle; keep icons/emojis */
+  nav .btn-text {
+    display: none;
+  }
+
+  nav button,
+  nav select {
+    padding: 4px 6px;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  .panel-title button {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+
+  .panel-title {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  .console {
+    height: 60px;
+  }
+
+  #missionPanel {
+    max-height: 160px;
+  }
+
+  .toast-container {
+    right: 10px;
+    left: 10px;
+  }
+
+  .toast {
+    max-width: 100%;
+  }
+
+  .crop-list {
+    grid-template-columns: 1fr;
+  }
+
+  .achieve-list {
+    grid-template-columns: 1fr;
+  }
+
+  .market-list {
+    grid-template-columns: 1fr;
+  }
+
+  .crop-emoji {
+    font-size: 28px;
+  }
+
+  .achieve-card {
+    padding: 8px;
+  }
+}
+
+/* ---------- Very Small (max-width: 400px) ---------- */
+@media (max-width: 400px) {
+  .logo {
+    font-size: 16px;
+  }
+
+  /* Hide button text, keep emojis only for nav items */
+  nav button .btn-label {
+    display: none;
+  }
+
+  nav button,
+  nav select {
+    padding: 3px 5px;
+    font-size: 11px;
+    margin-left: 3px;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+
+  .panel-title button {
+    padding: 2px 5px;
+    font-size: 11px;
+  }
+
+  .modal-header h2 {
+    font-size: 15px;
+  }
+
+  .crop-list,
+  .market-list,
+  .achieve-list {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+}
+
+/* ---------- Touch-friendly improvements ---------- */
+@media (pointer: coarse) {
+  nav button,
+  nav select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .panel-title button {
+    min-height: 44px;
+  }
+
+  .hint-btn {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  .modal-close {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ---------- Touch devices: remove hover effects that cause stuck states ---------- */
+@media (hover: none) {
+  nav button:hover {
+    background: inherit;
+    border-color: inherit;
+  }
+
+  .panel-title button:hover:not(:disabled) {
+    background: inherit;
+  }
+
+  .crop-card:hover {
+    border-color: #e2e8f0;
+    background: transparent;
+  }
+
+  .market-card:hover {
+    border-color: #e2e8f0;
+    background: transparent;
+  }
+
+  .achieve-card:hover {
+    transform: none;
+  }
+
+  #divider:hover {
+    background: #cbd5e1;
+  }
+
+  .hint-btn:hover {
+    background: #fef3c7;
+  }
+
+  .modal-close:hover {
+    color: #64748b;
+  }
+
+  .welcome-content button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Dark mode touch overrides */
+  body.dark-mode nav button:hover {
+    background: #334155;
+  }
+
+  body.dark-mode .panel-title button:hover:not(:disabled) {
+    background: #334155;
+  }
+
+  body.dark-mode .crop-card:hover {
+    border-color: #334155;
+    background: transparent;
+  }
+
+  body.dark-mode .market-card:hover {
+    border-color: #334155;
+    background: transparent;
+  }
+
+  body.dark-mode #divider:hover {
+    background: #475569;
+  }
+
+  body.dark-mode .hint-btn:hover {
+    background: #78350f;
+  }
+}

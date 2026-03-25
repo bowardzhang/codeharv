@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Cyber Farm - Learn Python by Farming</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="style.css" />
@@ -39,6 +40,7 @@
       <button id="loginBtn">👤 Login</button>
       <span id="userDisplay" class="hidden" style="font-size:13px;color:#16a34a;font-weight:600;margin-left:8px;"></span>
     </div>
+    <button id="shareBtn" title="Share">📤 Share</button>
     <button id="darkModeBtn" title="Toggle Dark Mode">🌙</button>
     <select id="langSelect">
       <option value="en">English</option>
@@ -230,6 +232,38 @@
         cursor:pointer;transition:all 0.2s;
       ">💳 Pay with Credit Card</button>
       <p id="premiumLoginNote" class="hidden" style="color:#ef4444;font-size:12px;margin-top:8px;">Please log in first to upgrade.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="modal hidden">
+  <div class="modal-content" style="width:min(420px,90vw);">
+    <div class="modal-header">
+      <h2 id="shareModalTitle">📤 Share Your Farm</h2>
+      <button class="modal-close" id="shareModalClose">&times;</button>
+    </div>
+    <div style="padding:20px;">
+      <div id="sharePreview" style="text-align:center;margin-bottom:16px;">
+        <canvas id="shareCanvas" style="max-width:100%;border-radius:8px;border:1px solid #e2e8f0;"></canvas>
+      </div>
+      <div id="shareButtons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="share-btn" id="shareTwitter" style="background:#1DA1F2;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
+          𝕏 Twitter/X
+        </button>
+        <button class="share-btn" id="shareFacebook" style="background:#1877F2;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
+          📘 Facebook
+        </button>
+        <button class="share-btn" id="shareWeChat" style="background:#07C160;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
+          💬 WeChat
+        </button>
+        <button class="share-btn" id="shareWhatsApp" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">
+          📱 WhatsApp
+        </button>
+        <button class="share-btn" id="shareDownload" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;grid-column:1/-1;">
+          💾 Download Image
+        </button>
+      </div>
     </div>
   </div>
 </div>

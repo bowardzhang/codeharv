@@ -1483,6 +1483,7 @@ document.addEventListener("keydown", (e) => {
     if (marketModal) marketModal.classList.add("hidden");
     if (authModal) authModal.classList.add("hidden");
     if (missionsModal) missionsModal.classList.add("hidden");
+    if (shareModal) shareModal.classList.add("hidden");
     if (premiumModal) premiumModal.classList.add("hidden");
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
@@ -1604,6 +1605,10 @@ function applyLanguage() {
   if (missionsTitle) missionsTitle.textContent = "📋 " + t("all_missions");
   const premiumTitle = document.getElementById("premiumModalTitle");
   if (premiumTitle) premiumTitle.textContent = "⭐ " + t("upgrade_to_premium");
+  const shareBtnEl = document.getElementById("shareBtn");
+  if (shareBtnEl) shareBtnEl.textContent = t("share");
+  const shareTitle = document.getElementById("shareModalTitle");
+  if (shareTitle) shareTitle.textContent = t("share_title");
 
   // About button
   const aboutBtn = document.getElementById("aboutBtn");
@@ -1669,6 +1674,149 @@ function applyLanguage() {
   // Re-render achievements
   if (currentAchievements.length) renderAchievements();
 }
+
+/* ============================================================
+   Social Sharing
+============================================================ */
+
+const shareModal = document.getElementById("shareModal");
+const shareModalClose = document.getElementById("shareModalClose");
+const shareBtn = document.getElementById("shareBtn");
+const shareCanvas = document.getElementById("shareCanvas");
+
+function generateShareImage() {
+  const sc = shareCanvas;
+  const w = 600, h = 400;
+  sc.width = w;
+  sc.height = h;
+  const ctx = sc.getContext("2d");
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, "#0f172a");
+  grad.addColorStop(1, "#1e3a5f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Copy farm canvas into share image
+  const farmCvs = document.getElementById("farmCanvas");
+  if (farmCvs) {
+    const farmAspect = farmCvs.width / farmCvs.height;
+    const drawW = 340;
+    const drawH = drawW / farmAspect;
+    const farmX = (w - drawW) / 2;
+    const farmY = 80;
+    // Rounded rect clip
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(farmX - 4, farmY - 4, drawW + 8, drawH + 8, 12);
+    ctx.fillStyle = "rgba(255,255,255,0.1)";
+    ctx.fill();
+    ctx.restore();
+    try {
+      ctx.drawImage(farmCvs, farmX, farmY, drawW, drawH);
+    } catch(e) {}
+  }
+
+  // Title
+  ctx.fillStyle = "#22c55e";
+  ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🌱 Cyber Farm", w / 2, 45);
+
+  // Stats bar at bottom
+  const farm = currentFarm || {};
+  const gold = farm.gold ?? 0;
+  const level = farm.level ?? 1;
+  const season = farm.season ?? "spring";
+  const completedMissions = currentMissions ? currentMissions.filter(m => m.completed).length : 0;
+  const totalMissions = currentMissions ? currentMissions.length : 25;
+
+  const statsY = h - 60;
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(0, statsY - 10, w, 80);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "14px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`💰 ${gold} Gold  |  ⭐ Level ${level}  |  🌸 ${season}  |  📋 ${completedMissions}/${totalMissions} Missions`, w / 2, statsY + 15);
+
+  // Username if logged in
+  if (currentUsername) {
+    ctx.fillStyle = "#64748b";
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText(`👤 ${currentUsername}`, w / 2, statsY + 40);
+  }
+
+  // Watermark
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText("cyberfarm.app", w - 16, h - 10);
+}
+
+function getShareText() {
+  const farm = currentFarm || {};
+  const gold = farm.gold ?? 0;
+  const level = farm.level ?? 1;
+  const completedMissions = currentMissions ? currentMissions.filter(m => m.completed).length : 0;
+  return `🌱 I'm farming with Python on Cyber Farm! Level ${level}, ${gold} gold, ${completedMissions} missions completed. Learn Python by growing a virtual farm!`;
+}
+
+function getShareUrl() {
+  return "https://github.com/bowardzhang/cyber-farm";
+}
+
+if (shareBtn) {
+  shareBtn.addEventListener("click", () => {
+    generateShareImage();
+    shareModal.classList.remove("hidden");
+  });
+}
+
+if (shareModalClose) {
+  shareModalClose.addEventListener("click", () => shareModal.classList.add("hidden"));
+}
+if (shareModal) {
+  shareModal.addEventListener("click", (e) => { if (e.target === shareModal) shareModal.classList.add("hidden"); });
+}
+
+// Twitter/X
+document.getElementById("shareTwitter")?.addEventListener("click", () => {
+  const text = encodeURIComponent(getShareText());
+  const url = encodeURIComponent(getShareUrl());
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank", "width=600,height=400");
+});
+
+// Facebook
+document.getElementById("shareFacebook")?.addEventListener("click", () => {
+  const url = encodeURIComponent(getShareUrl());
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank", "width=600,height=400");
+});
+
+// WeChat - show QR code hint (WeChat can't directly share from web)
+document.getElementById("shareWeChat")?.addEventListener("click", () => {
+  // Download the image so user can share it in WeChat
+  const link = document.createElement("a");
+  link.download = "cyberfarm-share.png";
+  link.href = shareCanvas.toDataURL("image/png");
+  link.click();
+  showToastNotification("💬 WeChat", t("share_wechat_hint") || "Image saved! Share it in WeChat.", "toast-mission");
+});
+
+// WhatsApp
+document.getElementById("shareWhatsApp")?.addEventListener("click", () => {
+  const text = encodeURIComponent(getShareText() + " " + getShareUrl());
+  window.open(`https://wa.me/?text=${text}`, "_blank");
+});
+
+// Download image
+document.getElementById("shareDownload")?.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "cyberfarm-share.png";
+  link.href = shareCanvas.toDataURL("image/png");
+  link.click();
+});
 
 /* ============================================================
    Init

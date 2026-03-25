@@ -114,6 +114,9 @@ const I18N = {
     func_has_pest: "Check for pest",
     func_remove_pest: "Remove pest (cost: 5g)",
     func_get_pests: "List all pests",
+    share: "📤 Share",
+    share_title: "📤 Share Your Farm",
+    share_wechat_hint: "Image saved! Share it in WeChat.",
   },
   zh: {
     welcome_title: "欢迎来到赛博农场！",
@@ -227,6 +230,9 @@ const I18N = {
     func_has_pest: "检查是否有害虫",
     func_remove_pest: "清除害虫（花费5金币）",
     func_get_pests: "列出所有害虫",
+    share: "📤 分享",
+    share_title: "📤 分享你的农场",
+    share_wechat_hint: "图片已保存！在微信中分享吧。",
   },
   de: {
     welcome_title: "Willkommen bei Cyber Farm!",
@@ -340,6 +346,9 @@ const I18N = {
     func_has_pest: "Auf Schädlinge prüfen",
     func_remove_pest: "Schädling entfernen (Kosten: 5g)",
     func_get_pests: "Alle Schädlinge auflisten",
+    share: "📤 Teilen",
+    share_title: "📤 Teile deine Farm",
+    share_wechat_hint: "Bild gespeichert! Teile es in WeChat.",
   },
   fr: {
     welcome_title: "Bienvenue à Cyber Farm !",
@@ -453,6 +462,9 @@ const I18N = {
     func_has_pest: "Vérifier la présence de nuisibles",
     func_remove_pest: "Éliminer un nuisible (coût : 5g)",
     func_get_pests: "Lister tous les nuisibles",
+    share: "📤 Partager",
+    share_title: "📤 Partagez votre ferme",
+    share_wechat_hint: "Image sauvegardée ! Partagez-la sur WeChat.",
   },
 };
 

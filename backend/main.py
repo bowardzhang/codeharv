@@ -5,10 +5,19 @@ from storage import load_user_farm
 from auth import register, login, get_user_by_token, save_user_progress, load_user_progress, logout, upgrade_to_premium
 from pydantic import BaseModel
 import os
+from pathlib import Path
+
+# Load .env file if present
+_env_path = Path(__file__).parent / ".env"
+if _env_path.exists():
+    for line in _env_path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 import ast
 import asyncio
 

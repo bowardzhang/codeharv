@@ -2,6 +2,8 @@ from time import time
 from farm import Farm, LEVELS, GOLD_INITIAL
 from executor import Executor
 from storage import load_user_farm
+from auth import register, login, get_user_by_token, save_user_progress, load_user_progress, logout
+from pydantic import BaseModel
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +12,13 @@ import ast
 import asyncio
 
 app = FastAPI()
+
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+class TokenRequest(BaseModel):
+    token: str
 
 # ===============================
 # API
@@ -245,6 +254,7 @@ async def run_script(ws: WebSocket):
                     farm.planted_crop_types = set(save.get("planted_crop_types", []))
                     farm.best_roi = save.get("best_roi", 0.0)
                     farm.active_mission_idx = save.get("active_mission_idx", 0)
+                    farm.experienced_seasons = set(save.get("experienced_seasons", []))
                 await ws.send_json({
                     "type": "farm_state",
                     "farm": farm.snapshot()
@@ -261,6 +271,50 @@ async def run_script(ws: WebSocket):
             "message": str(e),
             "line": getattr(e, "lineno", None)
         })
+
+# ===============================
+# Auth & Progress API
+# ===============================
+
+@app.post("/api/register")
+async def api_register(req: AuthRequest):
+    return register(req.username, req.password)
+
+@app.post("/api/login")
+async def api_login(req: AuthRequest):
+    return login(req.username, req.password)
+
+@app.post("/api/logout")
+async def api_logout(req: TokenRequest):
+    logout(req.token)
+    return {"success": True}
+
+@app.post("/api/save")
+async def api_save(token: str = "", save: dict = {}):
+    if token:
+        save_user_progress(token, save)
+    return {"success": True}
+
+@app.get("/api/load")
+async def api_load(token: str = ""):
+    if token:
+        data = load_user_progress(token)
+        if data:
+            return {"success": True, "save": data}
+    return {"success": False}
+
+@app.get("/api/profile")
+async def api_profile(token: str = ""):
+    if token:
+        user = get_user_by_token(token)
+        if user:
+            return {
+                "success": True,
+                "username": user["username"],
+                "total_harvests": user.get("total_harvests", 0),
+                "total_scripts_run": user.get("total_scripts_run", 0),
+            }
+    return {"success": False}
 
 # ===============================
 # Frontend (mount last!)

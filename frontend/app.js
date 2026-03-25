@@ -59,6 +59,19 @@ const I18N = {
     water: "Water",
     nutrition: "Nutrition",
     concept: "Concept",
+    season: "Season",
+    market: "Market",
+    market_btn: "💹 Market",
+    market_prices: "💹 Market Prices",
+    login: "👤 Login",
+    logout: "Logout",
+    register: "Register",
+    pest_alert: "🐛 Pest Alert",
+    pest_removed: "Pest removed!",
+    season_changed: "Season changed!",
+    sell: "Sell",
+    base_price: "Base",
+    current_price: "Current",
   },
   zh: {
     welcome_title: "欢迎来到赛博农场！",
@@ -111,6 +124,19 @@ const I18N = {
     water: "水分",
     nutrition: "养分",
     concept: "概念",
+    season: "季节",
+    market: "市场",
+    market_btn: "💹 市场",
+    market_prices: "💹 市场价格",
+    login: "👤 登录",
+    logout: "退出",
+    register: "注册",
+    pest_alert: "🐛 害虫警告",
+    pest_removed: "害虫已清除！",
+    season_changed: "季节已变化！",
+    sell: "出售",
+    base_price: "基础价",
+    current_price: "当前价",
   }
 };
 
@@ -181,6 +207,19 @@ monaco.languages.registerCompletionItemProvider('python', {
       { label: 'get_weather', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_weather()', insertTextRules: 4, documentation: 'Get current weather condition' },
       { label: 'get_status', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_status(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Get crop status at (x, y)' },
       { label: 'print', kind: monaco.languages.CompletionItemKind.Function, insertText: 'print(${1:value})', insertTextRules: 4, documentation: 'Print value to console' },
+      { label: 'sell', kind: monaco.languages.CompletionItemKind.Function, insertText: 'sell(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Sell mature crop at market price' },
+      { label: 'get_price', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_price("${1:crop}")', insertTextRules: 4, documentation: 'Get current market price for a crop' },
+      { label: 'get_market', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_market()', insertTextRules: 4, documentation: 'Get all current market prices' },
+      { label: 'get_season', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_season()', insertTextRules: 4, documentation: 'Get current season' },
+      { label: 'get_gold', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_gold()', insertTextRules: 4, documentation: 'Get current gold amount' },
+      { label: 'get_time', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_time()', insertTextRules: 4, documentation: 'Get current farm time' },
+      { label: 'get_all_mature', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_all_mature()', insertTextRules: 4, documentation: 'Get list of all mature crop positions' },
+      { label: 'get_all_planted', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_all_planted()', insertTextRules: 4, documentation: 'Get list of all planted crops' },
+      { label: 'count_crops', kind: monaco.languages.CompletionItemKind.Function, insertText: 'count_crops()', insertTextRules: 4, documentation: 'Count planted crops' },
+      { label: 'has_pest', kind: monaco.languages.CompletionItemKind.Function, insertText: 'has_pest(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Check if cell has a pest' },
+      { label: 'remove_pest', kind: monaco.languages.CompletionItemKind.Function, insertText: 'remove_pest(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Remove pest at (x,y) - costs 5 gold' },
+      { label: 'get_pests', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_pests()', insertTextRules: 4, documentation: 'Get list of all pests' },
+      { label: 'get_status', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_status(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Get detailed status of cell (x,y)' },
     ]
   })
 });
@@ -405,6 +444,7 @@ function drawScene(farm = EMPTY_FARM) {
   updateFieldFromCanvas();
   updateResource(farm.gold ?? 0, farm.time ?? 0);
   updateWeatherDisplay(farm);
+  updateSeasonDisplay(farm);
 
   const grid = farm.grid ?? [];
   if (!grid.length) return;
@@ -421,6 +461,20 @@ function drawScene(farm = EMPTY_FARM) {
       drawCrop(cell, p);
       if (cell.maturity >= 1.0) {
         drawHarvestIndicator(p, p.depth);
+      }
+      // Draw pest indicator
+      if (farm.pests) {
+        const pest = farm.pests.find(p => p.x === x && p.y === y);
+        if (pest) {
+          const pestEmoji = pest.type === "bug" ? "🐛" : pest.type === "weed" ? "🌵" : "❄️";
+          const pestSize = (14 + p.depth * 3) * bgScale;
+          ctx.save();
+          ctx.font = `${pestSize}px serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(pestEmoji, p.x - pestSize, p.y - pestSize);
+          ctx.restore();
+        }
       }
     }
   }
@@ -468,6 +522,13 @@ function updateWeatherDisplay(farm) {
   weatherDisplay.textContent = `${farm.weather_info.emoji} ${capitalize(farm.weather || 'sunny')}`;
 }
 
+const seasonDisplay = document.getElementById("seasonDisplay");
+
+function updateSeasonDisplay(farm) {
+  if (!farm || !farm.season_info) return;
+  seasonDisplay.textContent = `${farm.season_info.emoji} ${capitalize(farm.season || 'spring')}`;
+}
+
 function updateLevelDisplay(farm) {
   if (!farm || farm.level === undefined) return;
   const level = farm.level;
@@ -486,6 +547,22 @@ function updateLevelDisplay(farm) {
   }
   xpFill.style.width = `${pct}%`;
   xpText.textContent = `${xp} XP`;
+}
+
+const pestCountEl = document.getElementById("pestCount");
+
+function updatePestDisplay(farm) {
+  if (!farm || !farm.pests) {
+    if (pestCountEl) pestCountEl.classList.add("hidden");
+    return;
+  }
+  const count = farm.pests.length;
+  if (count > 0) {
+    pestCountEl.textContent = `🐛 ${count}`;
+    pestCountEl.classList.remove("hidden");
+  } else {
+    pestCountEl.classList.add("hidden");
+  }
 }
 
 /* ============================================================
@@ -632,6 +709,246 @@ achieveModalClose.addEventListener("click", () => achieveModal.classList.add("hi
 achieveModal.addEventListener("click", (e) => { if (e.target === achieveModal) achieveModal.classList.add("hidden"); });
 
 /* ============================================================
+   Market Modal
+============================================================ */
+
+const marketModal = document.getElementById("marketModal");
+const marketList = document.getElementById("marketList");
+const marketBtn = document.getElementById("marketBtn");
+const marketModalClose = document.getElementById("marketModalClose");
+
+let currentMarketPrices = {};
+
+function updateMarketList() {
+  if (!marketList) return;
+  marketList.innerHTML = "";
+
+  for (const [name, info] of Object.entries(cropData)) {
+    const basePrice = info.gain;
+    const currentPrice = currentMarketPrices[name] || basePrice;
+    const diff = currentPrice - basePrice;
+    let priceClass = "price-normal";
+    let arrow = "";
+    if (diff > 0.5) { priceClass = "price-up"; arrow = "▲"; }
+    else if (diff < -0.5) { priceClass = "price-down"; arrow = "▼"; }
+
+    const card = document.createElement("div");
+    card.className = "market-card";
+    card.innerHTML = `
+      <span class="market-emoji">${info.emoji}</span>
+      <div>
+        <div class="market-name">${name}</div>
+        <div class="market-price">
+          ${t("base_price")}: ${basePrice}g<br>
+          ${t("current_price")}: <span class="${priceClass}">${currentPrice}g ${arrow}</span>
+        </div>
+      </div>
+    `;
+    marketList.appendChild(card);
+  }
+}
+
+if (marketBtn) {
+  marketBtn.addEventListener("click", () => { updateMarketList(); marketModal.classList.remove("hidden"); });
+}
+if (marketModalClose) {
+  marketModalClose.addEventListener("click", () => marketModal.classList.add("hidden"));
+}
+if (marketModal) {
+  marketModal.addEventListener("click", (e) => { if (e.target === marketModal) marketModal.classList.add("hidden"); });
+}
+
+/* ============================================================
+   Auth System
+============================================================ */
+
+const authModal = document.getElementById("authModal");
+const authModalClose = document.getElementById("authModalClose");
+const loginBtn = document.getElementById("loginBtn");
+const userDisplayEl = document.getElementById("userDisplay");
+const authUsername = document.getElementById("authUsername");
+const authPassword = document.getElementById("authPassword");
+const authError = document.getElementById("authError");
+const authLoginSubmit = document.getElementById("authLoginSubmit");
+const authRegisterSubmit = document.getElementById("authRegisterSubmit");
+const authLogoutArea = document.getElementById("authLogoutArea");
+const authLogoutBtn = document.getElementById("authLogoutBtn");
+const authCurrentUser = document.getElementById("authCurrentUser");
+
+let authToken = localStorage.getItem("cyberfarm_token") || null;
+let currentUsername = localStorage.getItem("cyberfarm_username") || null;
+
+function updateAuthUI() {
+  if (authToken && currentUsername) {
+    if (loginBtn) loginBtn.textContent = `👤 ${currentUsername}`;
+    if (userDisplayEl) { userDisplayEl.textContent = currentUsername; userDisplayEl.classList.remove("hidden"); }
+    if (authLoginSubmit) authLoginSubmit.style.display = "none";
+    if (authRegisterSubmit) authRegisterSubmit.style.display = "none";
+    if (authLogoutArea) { authLogoutArea.classList.remove("hidden"); }
+    if (authCurrentUser) authCurrentUser.textContent = currentUsername;
+    if (authUsername) authUsername.parentElement.style.display = "none";
+    if (authPassword) authPassword.parentElement.style.display = "none";
+  } else {
+    if (loginBtn) loginBtn.textContent = t("login");
+    if (userDisplayEl) userDisplayEl.classList.add("hidden");
+    if (authLoginSubmit) authLoginSubmit.style.display = "";
+    if (authRegisterSubmit) authRegisterSubmit.style.display = "";
+    if (authLogoutArea) authLogoutArea.classList.add("hidden");
+    if (authUsername) authUsername.parentElement.style.display = "";
+    if (authPassword) authPassword.parentElement.style.display = "";
+  }
+}
+
+async function doAuth(action) {
+  const username = authUsername.value.trim();
+  const password = authPassword.value.trim();
+  if (!username || !password) {
+    authError.textContent = "Please enter username and password";
+    authError.style.display = "block";
+    return;
+  }
+  authError.style.display = "none";
+
+  try {
+    const res = await fetch(`/api/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      authToken = data.token;
+      currentUsername = data.username;
+      localStorage.setItem("cyberfarm_token", authToken);
+      localStorage.setItem("cyberfarm_username", currentUsername);
+      updateAuthUI();
+      authModal.classList.add("hidden");
+      showToastNotification(
+        `👤 ${action === "register" ? "Registered" : "Logged in"}`,
+        `Welcome, ${currentUsername}!`,
+        "toast-mission"
+      );
+      // Load saved progress
+      loadCloudProgress();
+    } else {
+      authError.textContent = data.message;
+      authError.style.display = "block";
+    }
+  } catch (e) {
+    authError.textContent = "Network error";
+    authError.style.display = "block";
+  }
+}
+
+async function loadCloudProgress() {
+  if (!authToken) return;
+  try {
+    const res = await fetch(`/api/load?token=${authToken}`);
+    const data = await res.json();
+    if (data.success && data.save) {
+      // Send restore to websocket
+      ws.send(JSON.stringify({ type: "restore", save: data.save }));
+      log("[system] Cloud save loaded");
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function saveCloudProgress(saveData) {
+  if (!authToken) return;
+  try {
+    await fetch(`/api/save?token=${authToken}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ save: saveData })
+    });
+  } catch (e) { /* ignore */ }
+}
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", () => {
+    updateAuthUI();
+    authModal.classList.remove("hidden");
+  });
+}
+
+if (authModalClose) {
+  authModalClose.addEventListener("click", () => authModal.classList.add("hidden"));
+}
+
+if (authModal) {
+  authModal.addEventListener("click", (e) => { if (e.target === authModal) authModal.classList.add("hidden"); });
+}
+
+if (authLoginSubmit) {
+  authLoginSubmit.addEventListener("click", () => doAuth("login"));
+}
+
+if (authRegisterSubmit) {
+  authRegisterSubmit.addEventListener("click", () => doAuth("register"));
+}
+
+if (authLogoutBtn) {
+  authLogoutBtn.addEventListener("click", async () => {
+    if (authToken) {
+      try { await fetch("/api/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: authToken }) }); } catch(e) {}
+    }
+    authToken = null;
+    currentUsername = null;
+    localStorage.removeItem("cyberfarm_token");
+    localStorage.removeItem("cyberfarm_username");
+    updateAuthUI();
+    authModal.classList.add("hidden");
+    showToastNotification("👤 Logged out", "See you next time!", "toast-mission");
+  });
+}
+
+// Allow Enter key in auth form
+if (authPassword) {
+  authPassword.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") authLoginSubmit.click();
+  });
+}
+
+// Init auth UI
+updateAuthUI();
+
+/* ============================================================
+   Sound Effects (Web Audio API)
+============================================================ */
+
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = "sine", volume = 0.1) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { /* audio not available */ }
+}
+
+function sfxPlant() { playTone(523, 0.15, "sine", 0.08); }
+function sfxHarvest() { playTone(784, 0.1, "sine", 0.08); setTimeout(() => playTone(1047, 0.15, "sine", 0.08), 100); }
+function sfxLevelUp() { playTone(523, 0.12, "sine", 0.08); setTimeout(() => playTone(659, 0.12, "sine", 0.08), 120); setTimeout(() => playTone(784, 0.2, "sine", 0.08), 240); }
+function sfxMission() { playTone(659, 0.15, "triangle", 0.08); setTimeout(() => playTone(880, 0.2, "triangle", 0.08), 150); }
+function sfxError() { playTone(200, 0.3, "sawtooth", 0.05); }
+function sfxPest() { playTone(150, 0.2, "sawtooth", 0.06); }
+
+/* ============================================================
    Bootstrap
 ============================================================ */
 
@@ -649,6 +966,8 @@ async function bootstrap() {
   updateLevelDisplay(data.farm);
   updateMissionPanel(data.farm.missions);
   updateAchievementsList(data.farm.achievements);
+  updateSeasonDisplay(data.farm);
+  updatePestDisplay(data.farm);
 
   resizeCanvas();
 }
@@ -745,10 +1064,17 @@ ws.onmessage = async e => {
     if (msg.farm.missions) updateMissionPanel(msg.farm.missions);
     if (msg.farm.achievements) updateAchievementsList(msg.farm.achievements);
     updateLevelDisplay(msg.farm);
+    updateSeasonDisplay(msg.farm);
+    updatePestDisplay(msg.farm);
 
     // Save game progress
     if (msg.farm && msg.farm.save) {
       localStorage.setItem("cyberfarm_save", JSON.stringify(msg.farm.save));
+    }
+
+    // Track market prices
+    if (msg.farm && msg.farm.market_prices) {
+      currentMarketPrices = msg.farm.market_prices;
     }
   }
 
@@ -782,6 +1108,7 @@ ws.onmessage = async e => {
           "toast-mission"
         );
       }
+      sfxMission();
     }
 
     // Show achievements
@@ -806,6 +1133,7 @@ ws.onmessage = async e => {
           "toast-levelup"
         );
       }
+      sfxLevelUp();
     }
 
     // Update level display from done message
@@ -825,10 +1153,13 @@ ws.onmessage = async e => {
       if (msg.farm.missions) updateMissionPanel(msg.farm.missions);
       if (msg.farm.achievements) updateAchievementsList(msg.farm.achievements);
       updateLevelDisplay(msg.farm);
+      updateSeasonDisplay(msg.farm);
+      updatePestDisplay(msg.farm);
 
       // Save game progress
       if (msg.farm.save) {
         localStorage.setItem("cyberfarm_save", JSON.stringify(msg.farm.save));
+        saveCloudProgress(msg.farm.save);
       }
     }
 
@@ -837,6 +1168,7 @@ ws.onmessage = async e => {
 
   if (msg.type === "error") {
     log("[error] " + msg.message);
+    sfxError();
   }
 };
 
@@ -1062,6 +1394,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     cropModal.classList.add("hidden");
     achieveModal.classList.add("hidden");
+    if (marketModal) marketModal.classList.add("hidden");
+    if (authModal) authModal.classList.add("hidden");
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
       wo.classList.add("hidden");
@@ -1166,6 +1500,8 @@ function applyLanguage() {
   achieveBtn.textContent = t("awards_btn");
   document.getElementById("loadHintBtn").textContent = t("load_hint");
   hintBtn.textContent = missionHint.classList.contains("hidden") ? t("show_hint") : t("hide_hint");
+  const marketBtn = document.getElementById("marketBtn");
+  if (marketBtn) marketBtn.textContent = t("market_btn");
   // Re-render the crop list
   buildCropList();
   // Re-render mission panel

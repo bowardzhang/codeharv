@@ -101,7 +101,10 @@ class Executor:
 
         # expr(function call)
         if isinstance(node, ast.Expr):
-            return self.exec_expr(node.value)
+            result = self.exec_expr(node.value)
+            if result is None:
+                return self.step()  # No event produced (e.g. print), continue
+            return result
 
         raise ScriptError(node, "Unsupported syntax")
 
@@ -223,6 +226,21 @@ class Executor:
         raise ScriptError(node, "Unsupported syntax")
 
     def exec_expr(self, node):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            obj = self.eval(node.func.value)
+            method_name = node.func.attr
+            args = [self.eval(a) for a in node.args]
+            SAFE_METHODS = {
+                'keys', 'values', 'items', 'get',
+                'upper', 'lower', 'strip', 'split', 'join', 'replace',
+                'startswith', 'endswith', 'count', 'index',
+                'append', 'pop', 'sort', 'reverse', 'copy',
+            }
+            if method_name in SAFE_METHODS:
+                method = getattr(obj, method_name, None)
+                if method and callable(method):
+                    return method(*args)
+            raise ScriptError(node, f"Unsupported method: {method_name}")
         if isinstance(node, ast.Call):
             return self.exec_call(node)
         raise ScriptError(node, "Only function calls allowed")
@@ -258,6 +276,32 @@ class Executor:
             ev = self.farm.clear_field(*args)
         elif func == "get_weather":
             return self.farm.get_weather()
+        elif func == "get_status":
+            return self.farm.get_status(*args)
+        elif func == "get_gold":
+            return self.farm.get_gold()
+        elif func == "get_time":
+            return self.farm.get_time()
+        elif func == "get_all_mature":
+            return self.farm.get_all_mature()
+        elif func == "get_all_planted":
+            return self.farm.get_all_planted()
+        elif func == "count_crops":
+            return self.farm.count_crops()
+        elif func == "get_price":
+            return self.farm.get_price(*args)
+        elif func == "sell":
+            ev = self.farm.sell(*args)
+        elif func == "get_market":
+            return self.farm.get_market()
+        elif func == "has_pest":
+            return self.farm.has_pest(*args)
+        elif func == "remove_pest":
+            ev = self.farm.remove_pest(*args)
+        elif func == "get_pests":
+            return self.farm.get_pests()
+        elif func == "get_season":
+            return self.farm.get_season()
         elif func == "print":
             msg = " ".join(str(a) for a in args)
             self.farm.print_log.append(msg)
@@ -380,6 +424,23 @@ class Executor:
             # Delegate to exec_call for farm functions
             return self.exec_call(node)
 
+        # Method calls on objects: obj.method(args)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            obj = self.eval(node.func.value)
+            method_name = node.func.attr
+            args = [self.eval(a) for a in node.args]
+            SAFE_METHODS = {
+                'keys', 'values', 'items', 'get',
+                'upper', 'lower', 'strip', 'split', 'join', 'replace',
+                'startswith', 'endswith', 'count', 'index',
+                'append', 'pop', 'sort', 'reverse', 'copy',
+            }
+            if method_name in SAFE_METHODS:
+                method = getattr(obj, method_name, None)
+                if method and callable(method):
+                    return method(*args)
+            raise ScriptError(node, f"Unsupported method: {method_name}")
+
         if isinstance(node, ast.Call):
             return self.exec_call(node)
 
@@ -471,5 +532,20 @@ class Executor:
                 return obj[idx]
             except (IndexError, KeyError, TypeError) as e:
                 raise ScriptError(node, str(e))
+
+        # Dict literals
+        if isinstance(node, ast.Dict):
+            keys = [self.eval(k) for k in node.keys]
+            values = [self.eval(v) for v in node.values]
+            return dict(zip(keys, values))
+
+        # Attribute access: e.g. obj.attr
+        if isinstance(node, ast.Attribute):
+            obj = self.eval(node.value)
+            attr = node.attr
+            result = getattr(obj, attr, None)
+            if result is not None:
+                return result
+            raise ScriptError(node, f"No attribute '{attr}'")
 
         raise ScriptError(node, f"Unsupported expression: {type(node)}")

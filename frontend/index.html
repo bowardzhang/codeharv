@@ -12,6 +12,7 @@
   <div class="logo">🌱 Cyber Farm</div>
   <div class="header-center">
     <div id="weatherDisplay" class="weather-badge">☀️ Sunny</div>
+    <div id="seasonDisplay" class="season-badge">🌸 Spring</div>
     <div id="levelDisplay" class="level-badge">
       <span id="levelText">Lv.1 Seed Planter</span>
       <div class="xp-bar"><div id="xpFill" class="xp-fill" style="width:0%"></div></div>
@@ -21,6 +22,7 @@
   <nav>
     <button id="cropBookBtn" title="Crop Encyclopedia">📖 Crops</button>
     <button id="achieveBtn" title="Achievements">🏆 Awards</button>
+    <button id="marketBtn" title="Market Prices">💹 Market</button>
     <div id="aboutWrapper">
       <button id="aboutBtn">About</button>
       <div id="aboutPanel" class="hidden">
@@ -32,6 +34,10 @@
           © 2026 Cyber Farm<br>All rights reserved.
         </div>
       </div>
+    </div>
+    <div id="authArea">
+      <button id="loginBtn">👤 Login</button>
+      <span id="userDisplay" class="hidden" style="font-size:13px;color:#16a34a;font-weight:600;margin-left:8px;"></span>
     </div>
     <button id="darkModeBtn" title="Toggle Dark Mode">🌙</button>
     <select id="langSelect">
@@ -61,6 +67,7 @@
     <div class="panel-title">
       <span>Farm View</span>
       <span id="resource">💰 0 | 🕒 0</span>
+      <span id="pestCount" class="pest-badge hidden">🐛 0</span>
     </div>
     <div id="farmContainer">
       <canvas id="farmCanvas"></canvas>
@@ -108,6 +115,18 @@
         <code>get_status(x, y)</code> - Get crop status at (x, y)<br>
         <code>clear()</code> - Clear the entire field<br>
         <code>print(value)</code> - Print to console<br>
+        <code>sell(x, y)</code> - Sell at market price<br>
+        <code>get_price("crop")</code> - Get current market price<br>
+        <code>get_market()</code> - Get all market prices<br>
+        <code>get_season()</code> - Get current season<br>
+        <code>get_gold()</code> - Get your gold amount<br>
+        <code>get_time()</code> - Get farm time<br>
+        <code>get_all_mature()</code> - List all mature crop positions<br>
+        <code>get_all_planted()</code> - List all planted crops<br>
+        <code>count_crops()</code> - Count planted crops<br>
+        <code>has_pest(x, y)</code> - Check for pest<br>
+        <code>remove_pest(x, y)</code> - Remove pest (cost: 5g)<br>
+        <code>get_pests()</code> - List all pests<br>
       </div>
     </div>
   </div>
@@ -121,6 +140,49 @@
       <button class="modal-close" id="achieveModalClose">&times;</button>
     </div>
     <div id="achieveList" class="achieve-list"></div>
+  </div>
+</div>
+
+<!-- Market Modal -->
+<div id="marketModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>💹 Market Prices</h2>
+      <button class="modal-close" id="marketModalClose">&times;</button>
+    </div>
+    <div class="market-info">
+      <p style="font-size:13px;color:#64748b;padding:0 20px;">Prices fluctuate over time! Use <code>sell(x, y)</code> instead of <code>harvest(x, y)</code> to sell at market price. Use <code>get_price("crop")</code> to check prices in your script.</p>
+    </div>
+    <div id="marketList" class="market-list"></div>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div id="authModal" class="modal hidden">
+  <div class="modal-content" style="width:min(380px,90vw);">
+    <div class="modal-header">
+      <h2 id="authModalTitle">👤 Login</h2>
+      <button class="modal-close" id="authModalClose">&times;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username</label>
+        <input id="authUsername" type="text" maxlength="20" placeholder="Enter username" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Password</label>
+        <input id="authPassword" type="password" maxlength="50" placeholder="Enter password" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+      </div>
+      <div id="authError" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
+      <div style="display:flex;gap:8px;">
+        <button id="authLoginSubmit" style="flex:1;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;">Login</button>
+        <button id="authRegisterSubmit" style="flex:1;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;">Register</button>
+      </div>
+      <div id="authLogoutArea" class="hidden" style="text-align:center;margin-top:12px;">
+        <p style="font-size:14px;margin-bottom:8px;">Logged in as <b id="authCurrentUser"></b></p>
+        <button id="authLogoutBtn" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Logout</button>
+      </div>
+    </div>
   </div>
 </div>
 

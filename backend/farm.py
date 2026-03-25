@@ -71,6 +71,7 @@ FIELD_RATIO = {
 GOLD_INITIAL = 500
 WATER_COST = 2
 FERTILIZE_COST = 3
+PEST_REMOVE_COST = 5
 EXEC_INTERVAL = 100  # in milliseconds
 
 # ---------- Weather System ----------
@@ -83,6 +84,37 @@ WEATHERS = {
 }
 
 WEATHER_CHANGE_INTERVAL = 30.0  # farm-time seconds between weather changes
+
+# ---------- Season System ----------
+SEASONS = {
+    "spring": {
+        "growth_mult": 1.2,
+        "emoji": "\U0001f338",
+        "desc": "Spring - good for planting!",
+        "special": "planting_bonus",
+    },
+    "summer": {
+        "growth_mult": 1.5,
+        "emoji": "\u2600\ufe0f",
+        "desc": "Summer - best growth!",
+        "special": "best_growth",
+    },
+    "autumn": {
+        "growth_mult": 0.8,
+        "emoji": "\U0001f342",
+        "desc": "Autumn - harvest bonus (1.5x gain)!",
+        "special": "harvest_bonus",
+    },
+    "winter": {
+        "growth_mult": 0.3,
+        "emoji": "\u2744\ufe0f",
+        "desc": "Winter - crops can freeze!",
+        "special": "frost_risk",
+    },
+}
+
+SEASON_CHANGE_INTERVAL = 50.0  # farm-time seconds between season changes
+SEASON_ORDER = ["spring", "summer", "autumn", "winter"]
 
 # ---------- XP & Level System ----------
 LEVELS = [
@@ -115,6 +147,12 @@ ACHIEVEMENTS = [
     {"id": "speed_demon",  "title": "Speed Demon",     "desc": "Complete a script in under 50 farm-time seconds", "emoji": "\u26a1"},
     {"id": "diverse_farmer","title": "Diverse Farmer", "desc": "Plant all crop types including new ones", "emoji": "\U0001f308"},
     {"id": "big_spender",  "title": "Big Spender",     "desc": "Spend 500+ gold in one script", "emoji": "\U0001f4b3"},
+    {"id": "season_surfer","title": "Season Surfer",   "desc": "Experience all 4 seasons",      "emoji": "\U0001f308"},
+    {"id": "market_whale", "title": "Market Whale",    "desc": "Earn 200+ gold from market sells in one script", "emoji": "\U0001f40b"},
+    {"id": "pest_free",    "title": "Pest Free",       "desc": "Remove 5 pests in one script",  "emoji": "\U0001f6e1\ufe0f"},
+    {"id": "winter_survivor","title": "Winter Survivor","desc": "Successfully harvest during winter", "emoji": "\u2744\ufe0f"},
+    {"id": "roi_500",      "title": "ROI King",        "desc": "Achieve 500% ROI",              "emoji": "\U0001f451"},
+    {"id": "gold_5000",    "title": "Millionaire",     "desc": "Accumulate 5000 gold",          "emoji": "\U0001f48e"},
 ]
 
 # ---------- Missions ----------
@@ -168,7 +206,7 @@ MISSIONS = [
         "xp_reward": 60,
         "gold_reward": 80,
         "concept": "If Conditions",
-        "check": None,  # checked via code analysis in executor
+        "check": None,
     },
     {
         "id": "m6",
@@ -208,7 +246,7 @@ MISSIONS = [
         "xp_reward": 50,
         "gold_reward": 60,
         "concept": "Variables & Return Values",
-        "check": None,  # checked via code analysis
+        "check": None,
     },
     {
         "id": "m10",
@@ -218,7 +256,7 @@ MISSIONS = [
         "xp_reward": 100,
         "gold_reward": 150,
         "concept": "Combining Everything",
-        "check": None,  # checked via code analysis
+        "check": None,
     },
     {
         "id": "m11",
@@ -228,7 +266,7 @@ MISSIONS = [
         "xp_reward": 80,
         "gold_reward": 120,
         "concept": "Defining Functions",
-        "check": None,  # checked via code analysis
+        "check": None,
     },
     {
         "id": "m12",
@@ -248,7 +286,7 @@ MISSIONS = [
         "xp_reward": 70,
         "gold_reward": 100,
         "concept": "Elif Chains",
-        "check": None,  # checked via code analysis
+        "check": None,
     },
     {
         "id": "m14",
@@ -258,7 +296,7 @@ MISSIONS = [
         "xp_reward": 60,
         "gold_reward": 80,
         "concept": "Expressions & Output",
-        "check": None,  # checked via code analysis
+        "check": None,
     },
     {
         "id": "m15",
@@ -269,6 +307,106 @@ MISSIONS = [
         "gold_reward": 200,
         "concept": "Complete Automation",
         "check": "master_automator",
+    },
+    {
+        "id": "m16",
+        "title": "While Loop Warrior",
+        "desc": "Use a while loop in your script.",
+        "hint": "i = 0\nwhile i < 6:\n    plant(\"grass\", i, 0)\n    i = i + 1",
+        "xp_reward": 70,
+        "gold_reward": 90,
+        "concept": "While Loops",
+        "check": None,
+    },
+    {
+        "id": "m17",
+        "title": "Market Trader",
+        "desc": "Use get_price() and sell() to sell at market price.",
+        "hint": "plant(\"grass\", 0, 0)\nwater(0, 0)\nwait(15)\nprice = get_price(\"grass\")\nprint(price)\nsell(0, 0)",
+        "xp_reward": 80,
+        "gold_reward": 100,
+        "concept": "Return Values & Variables",
+        "check": None,
+    },
+    {
+        "id": "m18",
+        "title": "Pest Controller",
+        "desc": "Use has_pest() and remove_pest() to handle pests.",
+        "hint": "if has_pest(0, 0):\n    remove_pest(0, 0)",
+        "xp_reward": 70,
+        "gold_reward": 90,
+        "concept": "Boolean Logic",
+        "check": None,
+    },
+    {
+        "id": "m19",
+        "title": "Season Watcher",
+        "desc": "Use get_season() with if to adapt to seasons.",
+        "hint": "s = get_season()\nif s == \"summer\":\n    plant(\"wheat\", 0, 0)\nif s == \"winter\":\n    print(\"Too cold!\")",
+        "xp_reward": 70,
+        "gold_reward": 90,
+        "concept": "String Comparison",
+        "check": None,
+    },
+    {
+        "id": "m20",
+        "title": "Data Analyst",
+        "desc": "Use get_all_mature() with len() and print results.",
+        "hint": "mature = get_all_mature()\nprint(len(mature))\nprint(mature)",
+        "xp_reward": 80,
+        "gold_reward": 100,
+        "concept": "Lists & len()",
+        "check": None,
+    },
+    {
+        "id": "m21",
+        "title": "The Optimizer",
+        "desc": "Use get_status() to check crop status before acting.",
+        "hint": "plant(\"wheat\", 0, 0)\nwait(5)\ninfo = get_status(0, 0)\nprint(info)\nif info[\"maturity\"] < 1.0:\n    water(0, 0)",
+        "xp_reward": 80,
+        "gold_reward": 110,
+        "concept": "Dictionaries & Return Values",
+        "check": None,
+    },
+    {
+        "id": "m22",
+        "title": "Loop & Condition Master",
+        "desc": "Use a while loop with is_mature() to wait until crop matures.",
+        "hint": "plant(\"grass\", 0, 0)\nwater(0, 0)\nwhile not is_mature(0, 0):\n    wait(2)\nharvest(0, 0)",
+        "xp_reward": 90,
+        "gold_reward": 120,
+        "concept": "While + Conditions",
+        "check": None,
+    },
+    {
+        "id": "m23",
+        "title": "Inventory Manager",
+        "desc": "Use count_crops() and get_all_planted() in your script.",
+        "hint": "plant(\"grass\", 0, 0)\nplant(\"wheat\", 1, 0)\nprint(count_crops())\nprint(get_all_planted())",
+        "xp_reward": 70,
+        "gold_reward": 90,
+        "concept": "Working with Lists",
+        "check": None,
+    },
+    {
+        "id": "m24",
+        "title": "Market Timing",
+        "desc": "Use get_market() to find and plant the most profitable crop.",
+        "hint": "market = get_market()\nprint(market)\n# Find best price and plant that crop!",
+        "xp_reward": 100,
+        "gold_reward": 150,
+        "concept": "Data Analysis",
+        "check": None,
+    },
+    {
+        "id": "m25",
+        "title": "Grand Master",
+        "desc": "Achieve 500%+ ROI in a single script run.",
+        "hint": "# Optimize your farm for maximum profit!\nclear()\nfor y in range(6):\n    for x in range(6):\n        plant(\"grass\", x, y)\n        water(x, y)\nwait(30)\nfor y in range(6):\n    for x in range(6):\n        if is_mature(x, y):\n            sell(x, y)",
+        "xp_reward": 150,
+        "gold_reward": 300,
+        "concept": "Algorithm Optimization",
+        "check": "roi_500",
     },
 ]
 
@@ -288,6 +426,25 @@ class Farm:
         # ---- weather ----
         self.weather = "sunny"
         self._weather_timer = 0.0  # time since last weather change
+
+        # ---- season ----
+        self.season = "spring"
+        self._season_timer = 0.0
+
+        # ---- market ----
+        self.market_prices: Dict[str, float] = {
+            crop: float(cfg["harvest_gain"]) for crop, cfg in CROPS.items()
+        }
+        self._market_timer = 0.0
+
+        # ---- pests ----
+        self.pests: Dict[tuple, str] = {}  # {(x,y): pest_type}
+        self.pest_removed_count = 0
+
+        # ---- new tracking stats ----
+        self.market_sell_gain = 0
+        self.experienced_seasons: Set[str] = {"spring"}  # start in spring
+        self.harvested_in_winter = False
 
         # ---- XP & level ----
         self.xp = 0
@@ -364,6 +521,83 @@ class Farm:
             self._weather_timer = 0.0
             self.weather = random.choice(list(WEATHERS.keys()))
 
+    # ---------- Season ----------
+    def get_season(self) -> str:
+        return self.season
+
+    def _maybe_change_season(self, dt: float) -> None:
+        self._season_timer += dt
+        if self._season_timer >= SEASON_CHANGE_INTERVAL:
+            self._season_timer = 0.0
+            idx = SEASON_ORDER.index(self.season)
+            self.season = SEASON_ORDER[(idx + 1) % len(SEASON_ORDER)]
+            self.experienced_seasons.add(self.season)
+
+    # ---------- Market ----------
+    def get_price(self, crop: str) -> float:
+        """Return current market sell price for a crop."""
+        if crop not in CROPS:
+            raise ValueError(f"Unknown crop: {crop}")
+        return self.market_prices.get(crop, CROPS[crop]["harvest_gain"])
+
+    def get_market(self) -> Dict[str, float]:
+        """Return dict of all current market prices."""
+        return dict(self.market_prices)
+
+    def _maybe_change_market(self, dt: float) -> None:
+        self._market_timer += dt
+        if self._market_timer >= 30.0:
+            self._market_timer = 0.0
+            for crop, cfg in CROPS.items():
+                base = cfg["harvest_gain"]
+                fluctuation = random.uniform(-0.20, 0.20)
+                self.market_prices[crop] = round(base * (1.0 + fluctuation), 1)
+
+    # ---------- Pest System ----------
+    def has_pest(self, x: int, y: int) -> Optional[str]:
+        """Return pest type at (x, y) or None."""
+        return self.pests.get((x, y), None)
+
+    def get_pests(self) -> List[Dict[str, Any]]:
+        """Return list of {x, y, type} for all active pests."""
+        return [
+            {"x": pos[0], "y": pos[1], "type": ptype}
+            for pos, ptype in self.pests.items()
+        ]
+
+    def remove_pest(self, x: int, y: int) -> Dict[str, Any]:
+        """Remove pest at (x, y). Costs PEST_REMOVE_COST gold."""
+        if (x, y) not in self.pests:
+            raise ValueError("No pest at this location")
+        if self.gold < PEST_REMOVE_COST:
+            raise ValueError("Not enough gold")
+
+        self.gold -= PEST_REMOVE_COST
+        self.script_cost += PEST_REMOVE_COST
+        del self.pests[(x, y)]
+        self.pest_removed_count += 1
+        self.add_xp(3)
+
+        return self._cell_event(x, y)
+
+    def _maybe_spawn_pests(self, dt: float) -> None:
+        """Random chance of pest appearing: 0.5% per cell per tick-second."""
+        pest_types_normal = ["bug", "weed"]
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                cell = self.grid[y][x]
+                if not cell["type"]:
+                    continue
+                if (x, y) in self.pests:
+                    continue
+                chance = 0.005 * dt
+                if random.random() < chance:
+                    if self.season == "winter":
+                        ptype = random.choice(pest_types_normal + ["frost"])
+                    else:
+                        ptype = random.choice(pest_types_normal)
+                    self.pests[(x, y)] = ptype
+
     # ---------- XP & Level ----------
     def add_xp(self, amount: int) -> Optional[Dict[str, Any]]:
         """Add XP and check for level-up. Returns level_up info dict or None."""
@@ -383,6 +617,55 @@ class Farm:
                 "title": title,
             }
         return None
+
+    # ---------- New API Functions ----------
+    def get_status(self, x: int, y: int) -> Dict[str, Any]:
+        """Return dict with crop type, maturity, water, nutrient, pest info."""
+        cell = self._cell(x, y)
+        return {
+            "type": cell["type"],
+            "maturity": cell["maturity"],
+            "water": cell["water"],
+            "nutrient": cell["nutrient"],
+            "pest": self.pests.get((x, y), None),
+        }
+
+    def get_gold(self) -> int:
+        """Return current gold."""
+        return self.gold
+
+    def get_time(self) -> float:
+        """Return current farm time."""
+        return self.time
+
+    def get_all_mature(self) -> List[List[int]]:
+        """Return list of [x, y] for all mature crops."""
+        result = []
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                cell = self.grid[y][x]
+                if cell["type"] and cell["maturity"] >= 1.0:
+                    result.append([x, y])
+        return result
+
+    def get_all_planted(self) -> List[List[Any]]:
+        """Return list of [x, y, crop_type] for all planted cells."""
+        result = []
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                cell = self.grid[y][x]
+                if cell["type"]:
+                    result.append([x, y, cell["type"]])
+        return result
+
+    def count_crops(self) -> int:
+        """Return count of planted crops."""
+        count = 0
+        for y in range(self.grid_size):
+            for x in range(self.grid_size):
+                if self.grid[y][x]["type"]:
+                    count += 1
+        return count
 
     # ---------- Mission Checks ----------
     def _check_mission_any_planted(self) -> bool:
@@ -414,6 +697,11 @@ class Farm:
 
     def _check_mission_master_automator(self) -> bool:
         return self.script_gain >= 100
+
+    def _check_mission_roi_500(self) -> bool:
+        if self.script_cost <= 0:
+            return False
+        return (self.script_gain - self.script_cost) / self.script_cost >= 5.0
 
     def check_mission_by_name(self, check_name: str) -> bool:
         method = getattr(self, f"_check_mission_{check_name}", None)
@@ -499,6 +787,42 @@ class Farm:
             has_arithmetic = any(op in ct for op in ["+", "-", "*", "/"])
             return has_print and has_arithmetic
 
+        if mission_id == "m16":
+            # While Loop Warrior: must use a while loop
+            return "while " in ct
+
+        if mission_id == "m17":
+            # Market Trader: must use get_price and sell
+            return "get_price" in cf and "sell" in cf
+
+        if mission_id == "m18":
+            # Pest Controller: must use has_pest and remove_pest
+            return "has_pest" in cf and "remove_pest" in cf
+
+        if mission_id == "m19":
+            # Season Watcher: must use get_season with if
+            return "get_season" in cf and "if " in ct
+
+        if mission_id == "m20":
+            # Data Analyst: must use get_all_mature and len and print
+            return "get_all_mature" in cf and "len" in ct and "print" in cf
+
+        if mission_id == "m21":
+            # The Optimizer: must use get_status
+            return "get_status" in cf
+
+        if mission_id == "m22":
+            # Loop & Condition Master: while loop with is_mature
+            return "while " in ct and "is_mature" in cf
+
+        if mission_id == "m23":
+            # Inventory Manager: count_crops and get_all_planted
+            return "count_crops" in cf and "get_all_planted" in cf
+
+        if mission_id == "m24":
+            # Market Timing: get_market
+            return "get_market" in cf
+
         return False
 
     def get_missions_data(self) -> List[Dict[str, Any]]:
@@ -523,20 +847,18 @@ class Farm:
         """Check and return newly unlocked achievements."""
         newly_unlocked = []
 
+        roi_current = 0.0
+        if self.script_cost > 0:
+            roi_current = (self.script_gain - self.script_cost) / self.script_cost
+
         checks = {
             "first_plant": self.has_planted,
             "first_harvest": self.has_harvested,
             "gold_100": self.gold >= 100,
             "gold_1000": self.gold >= 1000,
             "full_field": self._check_mission_full_field(),
-            "roi_50": (
-                (self.script_gain - self.script_cost) / self.script_cost >= 0.5
-                if self.script_cost > 0 else False
-            ),
-            "roi_200": (
-                (self.script_gain - self.script_cost) / self.script_cost >= 2.0
-                if self.script_cost > 0 else False
-            ),
+            "roi_50": roi_current >= 0.5 if self.script_cost > 0 else False,
+            "roi_200": roi_current >= 2.0 if self.script_cost > 0 else False,
             "level_5": self.level >= 5,
             "level_10": self.level >= 10,
             "all_crops": len(self.planted_crop_types) >= len(CROPS),
@@ -545,6 +867,13 @@ class Farm:
             "speed_demon": self.time < 50 and self.script_gain > 0,
             "diverse_farmer": len(self.planted_crop_types) >= len(CROPS),
             "big_spender": self.script_cost >= 500,
+            # New achievements
+            "season_surfer": len(self.experienced_seasons) >= 4,
+            "market_whale": self.market_sell_gain >= 200,
+            "pest_free": self.pest_removed_count >= 5,
+            "winter_survivor": self.harvested_in_winter,
+            "roi_500": roi_current >= 5.0 if self.script_cost > 0 else False,
+            "gold_5000": self.gold >= 5000,
         }
 
         for ach in ACHIEVEMENTS:
@@ -633,8 +962,57 @@ class Farm:
         crop = cell["type"]
         gain = CROPS[crop]["harvest_gain"]
 
+        # Autumn harvest bonus
+        if self.season == "autumn":
+            gain = int(gain * 1.5)
+
         self.gold += gain
         self.script_gain += gain
+
+        # Track winter harvest
+        if self.season == "winter":
+            self.harvested_in_winter = True
+
+        # Clean up pest if present
+        if (x, y) in self.pests:
+            del self.pests[(x, y)]
+
+        self.grid[y][x] = self._empty_cell()
+
+        self.has_harvested = True
+        self.add_xp(5)
+
+        return self._cell_event(x, y)
+
+    def sell(self, x: int, y: int) -> Dict[str, Any]:
+        """Sell a mature crop at current market price."""
+        cell = self._cell(x, y)
+
+        if cell["type"] is None:
+            raise ValueError("Nothing to sell")
+
+        if cell["maturity"] < 1.0:
+            raise ValueError("Crop not mature")
+
+        crop = cell["type"]
+        gain = int(self.market_prices.get(crop, CROPS[crop]["harvest_gain"]))
+
+        # Autumn harvest bonus applies to sells too
+        if self.season == "autumn":
+            gain = int(gain * 1.5)
+
+        self.gold += gain
+        self.script_gain += gain
+        self.market_sell_gain += gain
+
+        # Track winter harvest
+        if self.season == "winter":
+            self.harvested_in_winter = True
+
+        # Clean up pest if present
+        if (x, y) in self.pests:
+            del self.pests[(x, y)]
+
         self.grid[y][x] = self._empty_cell()
 
         self.has_harvested = True
@@ -680,6 +1058,7 @@ class Farm:
         for y in range(self.grid_size):
             for x in range(self.grid_size):
                 self.grid[y][x] = self._empty_cell()
+        self.pests.clear()
 
         return self._cell_event(0, 0)
 
@@ -695,14 +1074,42 @@ class Farm:
 
         # Weather change check
         self._maybe_change_weather(dt)
+        # Season change check
+        self._maybe_change_season(dt)
+        # Market price fluctuation
+        self._maybe_change_market(dt)
+        # Pest spawning
+        self._maybe_spawn_pests(dt)
 
         weather_mult = WEATHERS[self.weather]["growth_mult"]
+        season_mult = SEASONS[self.season]["growth_mult"]
 
         for y in range(self.grid_size):
             for x in range(self.grid_size):
                 cell = self.grid[y][x]
                 if not cell["type"]:
                     continue
+
+                # Apply pest effects
+                pest = self.pests.get((x, y))
+                pest_growth_mult = 1.0
+                if pest == "bug":
+                    pest_growth_mult = 0.5  # slows growth 50%
+                elif pest == "weed":
+                    cell["nutrient"] = max(0.05, cell["nutrient"] - 0.02 * dt)
+
+                # Frost kills crops in winter if not removed after 20 seconds
+                if pest == "frost" and self.season == "winter":
+                    # Track frost duration in a simple way: frost kills after 20s of farm time
+                    # We use a probabilistic approach: if frost has been present,
+                    # after enough ticks it kills the crop
+                    # Simplified: frost damage accumulates, kills at threshold
+                    frost_kill_chance = dt / 20.0  # after ~20 seconds total, crop dies
+                    if random.random() < frost_kill_chance:
+                        self.grid[y][x] = self._empty_cell()
+                        if (x, y) in self.pests:
+                            del self.pests[(x, y)]
+                        continue
 
                 crop_cfg = CROPS[cell["type"]]
                 growth = (
@@ -711,6 +1118,8 @@ class Farm:
                     * (0.5 + cell["nutrient"])
                     * dt
                     * weather_mult
+                    * season_mult
+                    * pest_growth_mult
                 )
                 cell["maturity"] = min(1.0, cell["maturity"] + growth)
 
@@ -737,6 +1146,10 @@ class Farm:
             "planted_crop_types": list(self.planted_crop_types),
             "best_roi": self.best_roi,
             "active_mission_idx": self.active_mission_idx,
+            "experienced_seasons": list(self.experienced_seasons),
+            "pest_removed_count": self.pest_removed_count,
+            "market_sell_gain": self.market_sell_gain,
+            "harvested_in_winter": self.harvested_in_winter,
         }
 
     # ---------- Snapshot ----------
@@ -749,6 +1162,10 @@ class Farm:
             "time": self.time,
             "weather": self.weather,
             "weather_info": WEATHERS[self.weather],
+            "season": self.season,
+            "season_info": SEASONS[self.season],
+            "market_prices": dict(self.market_prices),
+            "pests": self.get_pests(),
             "xp": self.xp,
             "level": self.level,
             "level_title": LEVELS[self.level - 1]["title"],

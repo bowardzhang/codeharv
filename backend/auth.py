@@ -33,9 +33,16 @@ def init_db():
             active_mission_idx INTEGER DEFAULT 0,
             experienced_seasons TEXT DEFAULT '[]',
             total_harvests INTEGER DEFAULT 0,
-            total_scripts_run INTEGER DEFAULT 0
+            total_scripts_run INTEGER DEFAULT 0,
+            is_premium INTEGER DEFAULT 0
         )
     """)
+    # Migration for existing databases that lack the is_premium column
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN is_premium INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             token TEXT PRIMARY KEY,
@@ -173,6 +180,7 @@ def load_user_progress(token: str) -> dict | None:
         "username": user["username"],
         "total_harvests": user.get("total_harvests", 0),
         "total_scripts_run": user.get("total_scripts_run", 0),
+        "is_premium": bool(user.get("is_premium", 0)),
     }
 
 def logout(token: str):
@@ -180,6 +188,15 @@ def logout(token: str):
     conn = get_db()
     try:
         conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.commit()
+    finally:
+        conn.close()
+
+def upgrade_to_premium(user_id: int):
+    """Set a user's account to premium."""
+    conn = get_db()
+    try:
+        conn.execute("UPDATE users SET is_premium = 1 WHERE id = ?", (user_id,))
         conn.commit()
     finally:
         conn.close()

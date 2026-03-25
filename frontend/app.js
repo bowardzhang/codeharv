@@ -4,146 +4,43 @@ import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/+esm'
 window.__monaco = monaco;
 
 /* ============================================================
-   i18n
+   i18n  (translations loaded from i18n.js)
 ============================================================ */
 
-const I18N = {
-  en: {
-    welcome_title: "Welcome to Cyber Farm!",
-    welcome_desc: "Learn Python programming by growing a virtual farm.\nWrite Python scripts to plant, water, and harvest crops.\nComplete missions to level up and unlock achievements!",
-    quick_start: "Quick Start:",
-    quick_start_steps: "1. Read the current mission in the bottom-right panel\n2. Write Python code in the editor on the left\n3. Click ▶ Run or press Ctrl+Enter to execute\n4. Watch your farm come alive!",
-    start_farming: "Start Farming!",
-    python_script: "Python Script",
-    farm_view: "Farm View",
-    run: "▶ Run",
-    step: "⏭ Step",
-    stop: "⏹ Stop",
-    pause: "⏸ Pause",
-    resume: "▶ Resume",
-    current_mission: "📋 Current Mission",
-    show_hint: "💡 Show Hint",
-    hide_hint: "💡 Hide Hint",
-    load_hint: "📝 Load into Editor",
-    crops_btn: "📖 Crops",
-    awards_btn: "🏆 Awards",
-    crop_encyclopedia: "📖 Crop Encyclopedia",
-    achievements_title: "🏆 Achievements",
-    available_functions: "🎮 Available Functions",
-    all_missions_complete: "🎉 All missions completed! You are a Python master!",
-    connected: "[system] Connected to Cyber Farm server",
-    done: "[system] done",
-    paused: "[system] paused",
-    resumed: "[system] resumed",
-    aborted: "[system] aborted",
-    loaded_hint: "[system] Loaded hint code into editor",
-    no_hint: "[system] No active mission hint to load",
-    script_result: "📊 Script Result",
-    cost: "Cost",
-    gain: "Gain",
-    roi: "ROI",
-    best_roi: "Best ROI",
-    new_record: "🏆 New Best ROI!",
-    mission_complete: "🎯 Mission Complete",
-    achievement: "Achievement",
-    level_up: "⭐ Level Up!",
-    reward: "Reward",
-    speed: "Speed",
-    profit: "Profit",
-    fast: "Fast",
-    medium: "Medium",
-    slow: "Slow",
-    very_slow: "Very Slow",
-    empty_plot: "Empty Plot",
-    position: "Position",
-    water: "Water",
-    nutrition: "Nutrition",
-    concept: "Concept",
-    season: "Season",
-    market: "Market",
-    market_btn: "💹 Market",
-    market_prices: "💹 Market Prices",
-    login: "👤 Login",
-    logout: "Logout",
-    register: "Register",
-    pest_alert: "🐛 Pest Alert",
-    pest_removed: "Pest removed!",
-    season_changed: "Season changed!",
-    sell: "Sell",
-    base_price: "Base",
-    current_price: "Current",
-  },
-  zh: {
-    welcome_title: "欢迎来到赛博农场！",
-    welcome_desc: "通过经营虚拟农场来学习Python编程。\n编写Python脚本来种植、浇水和收获作物。\n完成任务来升级并解锁成就！",
-    quick_start: "快速入门：",
-    quick_start_steps: "1. 阅读右下角的当前任务\n2. 在左侧编辑器中编写Python代码\n3. 点击 ▶ 运行 或按 Ctrl+Enter 执行\n4. 看你的农场活起来！",
-    start_farming: "开始种田！",
-    python_script: "Python 脚本",
-    farm_view: "农场视图",
-    run: "▶ 运行",
-    step: "⏭ 单步",
-    stop: "⏹ 停止",
-    pause: "⏸ 暂停",
-    resume: "▶ 继续",
-    current_mission: "📋 当前任务",
-    show_hint: "💡 显示提示",
-    hide_hint: "💡 隐藏提示",
-    load_hint: "📝 加载到编辑器",
-    crops_btn: "📖 作物",
-    awards_btn: "🏆 成就",
-    crop_encyclopedia: "📖 作物百科",
-    achievements_title: "🏆 成就",
-    available_functions: "🎮 可用函数",
-    all_missions_complete: "🎉 所有任务已完成！你是Python大师！",
-    connected: "[系统] 已连接到赛博农场服务器",
-    done: "[系统] 完成",
-    paused: "[系统] 已暂停",
-    resumed: "[系统] 已继续",
-    aborted: "[系统] 已中止",
-    loaded_hint: "[系统] 已将提示代码加载到编辑器",
-    no_hint: "[系统] 没有可加载的任务提示",
-    script_result: "📊 脚本结果",
-    cost: "花费",
-    gain: "收入",
-    roi: "投资回报率",
-    best_roi: "最佳ROI",
-    new_record: "🏆 新纪录！",
-    mission_complete: "🎯 任务完成",
-    achievement: "成就",
-    level_up: "⭐ 升级！",
-    reward: "奖励",
-    speed: "速度",
-    profit: "利润",
-    fast: "快",
-    medium: "中等",
-    slow: "慢",
-    very_slow: "很慢",
-    empty_plot: "空地",
-    position: "位置",
-    water: "水分",
-    nutrition: "养分",
-    concept: "概念",
-    season: "季节",
-    market: "市场",
-    market_btn: "💹 市场",
-    market_prices: "💹 市场价格",
-    login: "👤 登录",
-    logout: "退出",
-    register: "注册",
-    pest_alert: "🐛 害虫警告",
-    pest_removed: "害虫已清除！",
-    season_changed: "季节已变化！",
-    sell: "出售",
-    base_price: "基础价",
-    current_price: "当前价",
-  }
-};
+// I18N, MISSION_I18N, ACHIEVEMENT_I18N, FREE_MISSION_COUNT are defined in i18n.js
 
 let currentLang = localStorage.getItem("cyberfarm_lang") || "en";
 
 function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+}
+
+// Translate mission fields using MISSION_I18N
+function tm(missionId, field) {
+  const m = MISSION_I18N[missionId];
+  if (!m) return "";
+  const lang = m[currentLang] || m.en;
+  return lang[field] || "";
+}
+
+// Translate achievement fields using ACHIEVEMENT_I18N
+function ta(achievementId, field) {
+  const a = ACHIEVEMENT_I18N[achievementId];
+  if (!a) return "";
+  const lang = a[currentLang] || a.en;
+  return lang[field] || "";
+}
+
+// Premium state
+let isPremium = false;
+
+async function checkPremiumStatus() {
+  if (!authToken) { isPremium = false; return; }
+  try {
+    const res = await fetch(`/api/premium-status?token=${authToken}`);
+    const data = await res.json();
+    isPremium = data.is_premium === true;
+  } catch(e) { /* ignore */ }
 }
 
 /* ============================================================
@@ -596,13 +493,34 @@ function updateMissionPanel(missions) {
     return;
   }
 
-  missionTitle.textContent = active.title;
-  missionDesc.textContent = active.desc;
-  missionConcept.textContent = `🧠 ${active.concept}`;
+  // Check if this mission is premium-locked
+  const missionIdx = missions.indexOf(active);
+  const isLocked = missionIdx >= FREE_MISSION_COUNT && !isPremium;
+
+  const mId = active.id || "";
+  missionTitle.textContent = tm(mId, "title") || active.title;
+  missionDesc.textContent = isLocked ? t("premium_required") : (tm(mId, "desc") || active.desc);
+  missionConcept.textContent = `🧠 ${tm(mId, "concept") || active.concept}`;
   missionReward.textContent = `${t("reward")}: +${active.xp_reward} XP, +${active.gold_reward} gold`;
-  missionHint.textContent = active.hint;
-  missionHint.classList.add("hidden");
-  hintBtn.textContent = t("show_hint");
+
+  if (isLocked) {
+    missionHint.textContent = "";
+    missionHint.classList.add("hidden");
+    hintBtn.style.display = "none";
+    document.getElementById("loadHintBtn").style.display = "none";
+    // Show upgrade prompt inside mission desc
+    missionDesc.innerHTML = `<span style="color:#d97706;">${t("premium_required")}</span><br>
+      <button onclick="document.getElementById('premiumModal').classList.remove('hidden')"
+        style="margin-top:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;">
+        ${t("upgrade_to_premium")}
+      </button>`;
+  } else {
+    missionHint.textContent = active.hint;
+    missionHint.classList.add("hidden");
+    hintBtn.textContent = t("show_hint");
+    hintBtn.style.display = "";
+    document.getElementById("loadHintBtn").style.display = "";
+  }
 }
 
 hintBtn.addEventListener("click", () => {
@@ -695,10 +613,12 @@ function renderAchievements() {
   for (const ach of currentAchievements) {
     const card = document.createElement("div");
     card.className = `achieve-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+    const aTitle = ta(ach.id, "title") || ach.title;
+    const aDesc = ta(ach.id, "desc") || ach.desc;
     card.innerHTML = `
       <span class="achieve-emoji">${ach.emoji}</span>
-      <div class="achieve-title">${ach.title}</div>
-      <div class="achieve-desc">${ach.desc}</div>
+      <div class="achieve-title">${aTitle}</div>
+      <div class="achieve-desc">${aDesc}</div>
     `;
     achieveList.appendChild(card);
   }
@@ -780,7 +700,8 @@ let currentUsername = localStorage.getItem("cyberfarm_username") || null;
 
 function updateAuthUI() {
   if (authToken && currentUsername) {
-    if (loginBtn) loginBtn.textContent = `👤 ${currentUsername}`;
+    const premBadge = isPremium ? " ⭐" : "";
+    if (loginBtn) loginBtn.textContent = `👤 ${currentUsername}${premBadge}`;
     if (userDisplayEl) { userDisplayEl.textContent = currentUsername; userDisplayEl.classList.remove("hidden"); }
     if (authLoginSubmit) authLoginSubmit.style.display = "none";
     if (authRegisterSubmit) authRegisterSubmit.style.display = "none";
@@ -825,12 +746,15 @@ async function doAuth(action) {
       updateAuthUI();
       authModal.classList.add("hidden");
       showToastNotification(
-        `👤 ${action === "register" ? "Registered" : "Logged in"}`,
+        `👤 ${action === "register" ? t("register") : t("login")}`,
         `Welcome, ${currentUsername}!`,
         "toast-mission"
       );
-      // Load saved progress
+      // Load saved progress and check premium
       loadCloudProgress();
+      await checkPremiumStatus();
+      updateAuthUI();
+      if (currentMissions.length) updateMissionPanel(currentMissions);
     } else {
       authError.textContent = data.message;
       authError.style.display = "block";
@@ -895,11 +819,12 @@ if (authLogoutBtn) {
     }
     authToken = null;
     currentUsername = null;
+    isPremium = false;
     localStorage.removeItem("cyberfarm_token");
     localStorage.removeItem("cyberfarm_username");
     updateAuthUI();
     authModal.classList.add("hidden");
-    showToastNotification("👤 Logged out", "See you next time!", "toast-mission");
+    showToastNotification("👤 " + t("logout"), "", "toast-mission");
   });
 }
 
@@ -912,7 +837,132 @@ if (authPassword) {
 
 // Init auth UI
 updateAuthUI();
+checkPremiumStatus();
 
+/* ============================================================
+   All Missions Modal
+============================================================ */
+
+const missionsModal = document.getElementById("missionsModal");
+const missionsModalClose = document.getElementById("missionsModalClose");
+const missionsListAll = document.getElementById("missionsListAll");
+const allMissionsBtn = document.getElementById("allMissionsBtn");
+
+function renderAllMissions() {
+  if (!missionsListAll || !currentMissions.length) return;
+  missionsListAll.innerHTML = "";
+  currentMissions.forEach((m, idx) => {
+    const mId = m.id || "";
+    const mTitle = tm(mId, "title") || m.title;
+    const mDesc = tm(mId, "desc") || m.desc;
+    const mConcept = tm(mId, "concept") || m.concept;
+    const isFree = idx < FREE_MISSION_COUNT;
+    const isLocked = !isFree && !isPremium;
+    const tag = isFree
+      ? `<span style="background:#22c55e;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("free_tag")}</span>`
+      : `<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("premium_tag")}</span>`;
+    const statusIcon = m.completed ? "✅" : (m.active ? "▶️" : (isLocked ? "🔒" : "⬜"));
+    const div = document.createElement("div");
+    div.style.cssText = `padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;gap:10px;${isLocked ? "opacity:0.65;" : ""}`;
+    div.innerHTML = `
+      <span style="font-size:16px;flex-shrink:0;margin-top:2px;">${statusIcon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          ${mTitle} ${tag}
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">${isLocked ? "🔒 " + t("premium_required") : mDesc}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">🧠 ${mConcept} | +${m.xp_reward} XP, +${m.gold_reward} gold</div>
+      </div>
+    `;
+    missionsListAll.appendChild(div);
+  });
+  // If not premium, add upgrade button at bottom
+  if (!isPremium) {
+    const btn = document.createElement("div");
+    btn.style.cssText = "padding:16px;text-align:center;";
+    btn.innerHTML = `<button onclick="document.getElementById('missionsModal').classList.add('hidden');document.getElementById('premiumModal').classList.remove('hidden');"
+      style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;">
+      ${t("upgrade_to_premium")} - $9.90
+    </button>`;
+    missionsListAll.appendChild(btn);
+  }
+}
+
+if (allMissionsBtn) {
+  allMissionsBtn.addEventListener("click", () => {
+    renderAllMissions();
+    missionsModal.classList.remove("hidden");
+  });
+}
+if (missionsModalClose) {
+  missionsModalClose.addEventListener("click", () => missionsModal.classList.add("hidden"));
+}
+if (missionsModal) {
+  missionsModal.addEventListener("click", (e) => { if (e.target === missionsModal) missionsModal.classList.add("hidden"); });
+}
+
+/* ============================================================
+   Premium / Stripe Checkout
+============================================================ */
+
+const premiumModal = document.getElementById("premiumModal");
+const premiumModalClose = document.getElementById("premiumModalClose");
+const premiumBuyBtn = document.getElementById("premiumBuyBtn");
+const premiumLoginNote = document.getElementById("premiumLoginNote");
+
+if (premiumModalClose) {
+  premiumModalClose.addEventListener("click", () => premiumModal.classList.add("hidden"));
+}
+if (premiumModal) {
+  premiumModal.addEventListener("click", (e) => { if (e.target === premiumModal) premiumModal.classList.add("hidden"); });
+}
+
+if (premiumBuyBtn) {
+  premiumBuyBtn.addEventListener("click", async () => {
+    if (!authToken) {
+      if (premiumLoginNote) premiumLoginNote.classList.remove("hidden");
+      return;
+    }
+    if (premiumLoginNote) premiumLoginNote.classList.add("hidden");
+    premiumBuyBtn.disabled = true;
+    premiumBuyBtn.textContent = "...";
+    try {
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: authToken, return_url: window.location.origin })
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        showToastNotification("⚠️", data.message || "Payment unavailable", "toast-pest");
+        premiumBuyBtn.disabled = false;
+        premiumBuyBtn.textContent = t("upgrade_btn");
+      }
+    } catch(e) {
+      showToastNotification("⚠️", "Network error", "toast-pest");
+      premiumBuyBtn.disabled = false;
+      premiumBuyBtn.textContent = t("upgrade_btn");
+    }
+  });
+}
+
+// Check for payment result in URL
+(function checkPaymentResult() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("payment") === "success") {
+    showToastNotification("🎉", t("payment_success"), "toast-mission");
+    isPremium = true;
+    // Clean URL
+    window.history.replaceState({}, "", window.location.pathname);
+    // Refresh premium status
+    checkPremiumStatus();
+  } else if (params.get("payment") === "cancelled") {
+    showToastNotification("ℹ️", t("payment_cancelled"), "toast-pest");
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+})();
 /* ============================================================
    Sound Effects (Web Audio API)
 ============================================================ */
@@ -1432,6 +1482,8 @@ document.addEventListener("keydown", (e) => {
     achieveModal.classList.add("hidden");
     if (marketModal) marketModal.classList.add("hidden");
     if (authModal) authModal.classList.add("hidden");
+    if (missionsModal) missionsModal.classList.add("hidden");
+    if (premiumModal) premiumModal.classList.add("hidden");
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
       wo.classList.add("hidden");
@@ -1536,12 +1588,86 @@ function applyLanguage() {
   achieveBtn.textContent = t("awards_btn");
   document.getElementById("loadHintBtn").textContent = t("load_hint");
   hintBtn.textContent = missionHint.classList.contains("hidden") ? t("show_hint") : t("hide_hint");
-  const marketBtn = document.getElementById("marketBtn");
-  if (marketBtn) marketBtn.textContent = t("market_btn");
+  const marketBtnEl = document.getElementById("marketBtn");
+  if (marketBtnEl) marketBtnEl.textContent = t("market_btn");
+
+  // Modal headers
+  const cropEncTitle = document.querySelector("#cropModal .modal-header h2");
+  if (cropEncTitle) cropEncTitle.textContent = t("crop_encyclopedia");
+  const achieveTitle = document.querySelector("#achieveModal .modal-header h2");
+  if (achieveTitle) achieveTitle.textContent = t("achievements_title");
+  const marketTitle = document.querySelector("#marketModal .modal-header h2");
+  if (marketTitle) marketTitle.textContent = t("market_prices");
+  const funcTitle = document.querySelector("#cropModal .modal-footer h3");
+  if (funcTitle) funcTitle.textContent = t("available_functions");
+  const missionsTitle = document.getElementById("missionsModalTitle");
+  if (missionsTitle) missionsTitle.textContent = "📋 " + t("all_missions");
+  const premiumTitle = document.getElementById("premiumModalTitle");
+  if (premiumTitle) premiumTitle.textContent = "⭐ " + t("upgrade_to_premium");
+
+  // About button
+  const aboutBtn = document.getElementById("aboutBtn");
+  if (aboutBtn) aboutBtn.textContent = t("about");
+
+  // Auth modal
+  const authTitle = document.getElementById("authModalTitle");
+  if (authTitle) authTitle.textContent = t("login");
+  const loginSubmit = document.getElementById("authLoginSubmit");
+  if (loginSubmit) loginSubmit.textContent = t("login").replace("👤 ", "");
+  const registerSubmit = document.getElementById("authRegisterSubmit");
+  if (registerSubmit) registerSubmit.textContent = t("register");
+
+  // Premium modal
+  const premiumDesc = document.getElementById("premiumDesc");
+  if (premiumDesc) premiumDesc.textContent = t("upgrade_desc");
+  if (premiumBuyBtn && !premiumBuyBtn.disabled) premiumBuyBtn.textContent = "💳 " + t("upgrade_btn");
+  const premNote = document.getElementById("premiumLoginNote");
+  if (premNote) premNote.textContent = t("login_required_for_premium");
+
+  // Market info
+  const marketInfo = document.querySelector("#marketModal .market-info p");
+  if (marketInfo) marketInfo.innerHTML = `<span style="font-size:13px;color:#64748b;">${t("market_info")}</span>`;
+
+  // Function reference translations
+  const funcRef = document.querySelector("#cropModal .func-ref");
+  if (funcRef) {
+    funcRef.innerHTML = `
+      <code>plant("crop", x, y)</code> - ${t("func_plant")}<br>
+      <code>water(x, y)</code> - ${t("func_water")}<br>
+      <code>fertilize(x, y)</code> - ${t("func_fertilize")}<br>
+      <code>harvest(x, y)</code> - ${t("func_harvest")}<br>
+      <code>wait(seconds)</code> - ${t("func_wait")}<br>
+      <code>is_mature(x, y)</code> - ${t("func_is_mature")}<br>
+      <code>get_weather()</code> - ${t("func_get_weather")}<br>
+      <code>get_status(x, y)</code> - ${t("func_get_status")}<br>
+      <code>clear()</code> - ${t("func_clear")}<br>
+      <code>print(value)</code> - ${t("func_print")}<br>
+      <code>sell(x, y)</code> - ${t("func_sell")}<br>
+      <code>get_price("crop")</code> - ${t("func_get_price")}<br>
+      <code>get_market()</code> - ${t("func_get_market")}<br>
+      <code>get_season()</code> - ${t("func_get_season")}<br>
+      <code>get_gold()</code> - ${t("func_get_gold")}<br>
+      <code>get_time()</code> - ${t("func_get_time")}<br>
+      <code>get_all_mature()</code> - ${t("func_get_all_mature")}<br>
+      <code>get_all_planted()</code> - ${t("func_get_all_planted")}<br>
+      <code>count_crops()</code> - ${t("func_count_crops")}<br>
+      <code>has_pest(x, y)</code> - ${t("func_has_pest")}<br>
+      <code>remove_pest(x, y)</code> - ${t("func_remove_pest")}<br>
+      <code>get_pests()</code> - ${t("func_get_pests")}<br>
+    `;
+  }
+
+  // Login button
+  if (!authToken) {
+    if (loginBtn) loginBtn.textContent = t("login");
+  }
+
   // Re-render the crop list
   buildCropList();
   // Re-render mission panel
   if (currentMissions.length) updateMissionPanel(currentMissions);
+  // Re-render achievements
+  if (currentAchievements.length) renderAchievements();
 }
 
 /* ============================================================
@@ -1549,3 +1675,6 @@ function applyLanguage() {
 ============================================================ */
 
 bgImg.onload = () => drawScene(currentFarm);
+
+// Apply language on load (translates HTML elements)
+applyLanguage();

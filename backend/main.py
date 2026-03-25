@@ -2,10 +2,11 @@ from time import time
 from farm import Farm, LEVELS, GOLD_INITIAL
 from executor import Executor
 from storage import load_user_farm
-from auth import register, login, get_user_by_token, save_user_progress, load_user_progress, logout
+from auth import register, login, get_user_by_token, save_user_progress, load_user_progress, logout, upgrade_to_premium
 from pydantic import BaseModel
+import os
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import ast
@@ -19,6 +20,10 @@ class AuthRequest(BaseModel):
 
 class TokenRequest(BaseModel):
     token: str
+
+class CheckoutRequest(BaseModel):
+    token: str
+    return_url: str = ""
 
 # ===============================
 # API
@@ -342,6 +347,80 @@ async def api_profile(token: str = ""):
                 "total_scripts_run": user.get("total_scripts_run", 0),
             }
     return {"success": False}
+
+# ===============================
+# Premium & Stripe API
+# ===============================
+
+@app.get("/api/premium-status")
+async def api_premium_status(token: str = ""):
+    if token:
+        user = get_user_by_token(token)
+        if user:
+            is_premium = bool(user.get("is_premium", 0))
+            return {"success": True, "is_premium": is_premium}
+    return {"success": False, "is_premium": False}
+
+@app.post("/api/create-checkout-session")
+async def api_create_checkout(req: CheckoutRequest):
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not stripe_key:
+        return {"success": False, "message": "Payment system not configured"}
+    user = get_user_by_token(req.token)
+    if not user:
+        return {"success": False, "message": "Please log in first"}
+    if user.get("is_premium", 0):
+        return {"success": False, "message": "Already premium"}
+    try:
+        import stripe
+        stripe.api_key = stripe_key
+        base_url = req.return_url or "http://localhost:8080"
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {"name": "Cyber Farm Premium - Unlock All 25 Missions"},
+                    "unit_amount": 990,
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url=base_url + "?payment=success",
+            cancel_url=base_url + "?payment=cancelled",
+            metadata={"user_id": str(user["id"])},
+        )
+        return {"success": True, "url": session.url}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@app.post("/api/stripe-webhook")
+async def stripe_webhook(request: Request):
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    if not stripe_key:
+        return {"received": False}
+    try:
+        import stripe
+        import json as json_module
+        stripe.api_key = stripe_key
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature", "")
+        if webhook_secret and sig_header:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        else:
+            event = json_module.loads(payload)
+        if event.get("type") == "checkout.session.completed":
+            session_data = event["data"]["object"]
+            user_id = int(session_data["metadata"]["user_id"])
+            upgrade_to_premium(user_id)
+    except Exception as e:
+        print(f"Stripe webhook error: {e}")
+    return {"received": True}
+
+@app.get("/api/stripe-key")
+async def api_stripe_key():
+    return {"key": os.environ.get("STRIPE_PUBLISHABLE_KEY", "")}
 
 # ===============================
 # Frontend (mount last!)

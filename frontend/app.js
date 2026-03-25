@@ -464,7 +464,7 @@ function drawScene(farm = EMPTY_FARM) {
       }
       // Draw pest indicator
       if (farm.pests) {
-        const pest = farm.pests.find(p => p.x === x && p.y === y);
+        const pest = farm.pests.find(pe => pe.x === x && pe.y === y);
         if (pest) {
           const pestEmoji = pest.type === "bug" ? "🐛" : pest.type === "weed" ? "🌵" : "❄️";
           const pestSize = (14 + p.depth * 3) * bgScale;
@@ -998,7 +998,44 @@ function addHarvestParticles(x, y) {
 ============================================================ */
 
 const protocol = location.protocol === "https:" ? "wss" : "ws";
-const ws = new WebSocket(`${protocol}://${location.host}/ws/run`);
+let ws;
+let wsReconnectTimer = null;
+
+function connectWebSocket() {
+  ws = new WebSocket(`${protocol}://${location.host}/ws/run`);
+
+  ws.onopen = () => {
+    log(t("connected"));
+    // Try to restore saved game state
+    const saved = localStorage.getItem("cyberfarm_save");
+    if (saved) {
+      try {
+        ws.send(JSON.stringify({ type: "restore", save: JSON.parse(saved) }));
+      } catch(e) { /* ignore corrupt save */ }
+    }
+  };
+
+  ws.onclose = () => {
+    log("[system] Connection lost. Reconnecting...", "#f59e0b");
+    executionActive = false;
+    autoPaused = false;
+    executionMode = null;
+    clearHighlight();
+    setButtonsIdle();
+    if (!wsReconnectTimer) {
+      wsReconnectTimer = setTimeout(() => {
+        wsReconnectTimer = null;
+        connectWebSocket();
+      }, 2000);
+    }
+  };
+
+  ws.onerror = () => {
+    // onclose will fire after this, handling reconnection
+  };
+
+  ws.onmessage = wsOnMessage;
+}
 
 let executionActive = false;
 let executionMode = null;
@@ -1019,18 +1056,9 @@ function showScriptResult(r) {
   log(text);
 }
 
-ws.onopen = () => {
-  log(t("connected"));
-  // Try to restore saved game state
-  const saved = localStorage.getItem("cyberfarm_save");
-  if (saved) {
-    try {
-      ws.send(JSON.stringify({ type: "restore", save: JSON.parse(saved) }));
-    } catch(e) { /* ignore corrupt save */ }
-  }
-};
+// WebSocket connection initialized below after all handlers are defined
 
-ws.onmessage = async e => {
+async function wsOnMessage(e) {
   const msg = JSON.parse(e.data);
 
   if (msg.type === "event") {
@@ -1169,8 +1197,16 @@ ws.onmessage = async e => {
   if (msg.type === "error") {
     log("[error] " + msg.message);
     sfxError();
+    executionActive = false;
+    autoPaused = false;
+    executionMode = null;
+    clearHighlight();
+    setButtonsIdle();
   }
-};
+}
+
+// Initialize WebSocket connection
+connectWebSocket();
 
 /* ============================================================
    Buttons

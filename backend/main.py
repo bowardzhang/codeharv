@@ -143,51 +143,99 @@ async def run_script(ws: WebSocket):
         while True:
             msg = await ws.receive_json()
 
-            # ==============================
-            # START SCRIPT
-            # ==============================
-            if msg["type"] == "start":
-                stop_idle_ticker()
+            try:
+                # ==============================
+                # START SCRIPT
+                # ==============================
+                if msg["type"] == "start":
+                    stop_idle_ticker()
 
-                # Reset time (but keep gold)
-                farm.time = 0
+                    # Reset time (but keep gold)
+                    farm.time = 0
 
-                # ---- reset script execution stats ----
-                farm.script_cost = 0
-                farm.script_gain = 0
+                    # ---- reset script execution stats ----
+                    farm.script_cost = 0
+                    farm.script_gain = 0
 
-                # ---- reset print log ----
-                farm.print_log = []
+                    # ---- reset per-script tracking ----
+                    farm.pest_removed_count = 0
+                    farm.market_sell_gain = 0
 
-                tree = ast.parse(msg["code"])
-                is_manual = msg["mode"] == "manual_step"
-                executor = Executor(tree, farm, is_manual)
+                    # ---- reset print log ----
+                    farm.print_log = []
 
-                # Manual step: execute one step
-                if is_manual:
-                    ev = executor.step()
+                    tree = ast.parse(msg["code"])
+                    is_manual = msg["mode"] == "manual_step"
+                    executor = Executor(tree, farm, is_manual)
 
-                    if ev is None:
-                        await handle_script_done(executor)
-                    else:
-                        await ws.send_json({
-                            "type": "event",
-                            "event": ev
-                        })
-                        await ws.send_json({
-                            "type": "farm_state",
-                            "farm": farm.snapshot()
-                        })
-
-                # Auto run
-                else:
-                    while True:
+                    # Manual step: execute one step
+                    if is_manual:
                         ev = executor.step()
 
                         if ev is None:
                             await handle_script_done(executor)
-                            break
+                        elif isinstance(ev, dict) and "type" in ev:
+                            await ws.send_json({
+                                "type": "event",
+                                "event": ev
+                            })
+                            await ws.send_json({
+                                "type": "farm_state",
+                                "farm": farm.snapshot()
+                            })
+                        else:
+                            # Non-event return (e.g. standalone get_gold())
+                            # Skip sending as event, continue
+                            await ws.send_json({
+                                "type": "farm_state",
+                                "farm": farm.snapshot()
+                            })
 
+                    # Auto run
+                    else:
+                        while True:
+                            ev = executor.step()
+
+                            if ev is None:
+                                await handle_script_done(executor)
+                                break
+
+                            # Only send dict events with proper structure
+                            if isinstance(ev, dict) and "type" in ev:
+                                await ws.send_json({
+                                    "type": "event",
+                                    "event": ev
+                                })
+                            await ws.send_json({
+                                "type": "farm_state",
+                                "farm": farm.snapshot()
+                            })
+
+                            # Wait for frontend ack / abort
+                            ctrl = await ws.receive_json()
+
+                            if ctrl["type"] == "ack":
+                                continue
+                            elif ctrl["type"] == "abort":
+                                executor = None
+                                break
+
+                # ==============================
+                # STEP (manual mode)
+                # ==============================
+                elif msg["type"] == "step":
+                    if executor is None:
+                        await ws.send_json({
+                            "type": "error",
+                            "message": "Script not initialized"
+                        })
+                        continue
+
+                    ev = executor.step()
+
+                    if ev is None:
+                        await handle_script_done(executor)
+                    elif isinstance(ev, dict) and "type" in ev:
                         await ws.send_json({
                             "type": "event",
                             "event": ev
@@ -196,69 +244,52 @@ async def run_script(ws: WebSocket):
                             "type": "farm_state",
                             "farm": farm.snapshot()
                         })
+                    else:
+                        await ws.send_json({
+                            "type": "farm_state",
+                            "farm": farm.snapshot()
+                        })
 
-                        # Wait for frontend ack / abort
-                        ctrl = await ws.receive_json()
+                # ==============================
+                # ABORT
+                # ==============================
+                elif msg["type"] == "abort":
+                    executor = None
+                    stop_idle_ticker()
+                    await ws.send_json({"type": "done"})
 
-                        if ctrl["type"] == "ack":
-                            continue
-                        elif ctrl["type"] == "abort":
-                            executor = None
-                            break
-
-            # ==============================
-            # STEP (manual mode)
-            # ==============================
-            elif msg["type"] == "step":
-                if executor is None:
-                    await ws.send_json({
-                        "type": "error",
-                        "message": "Script not initialized"
-                    })
-                    continue
-
-                ev = executor.step()
-
-                if ev is None:
-                    await handle_script_done(executor)
-                else:
-                    await ws.send_json({
-                        "type": "event",
-                        "event": ev
-                    })
+                # ==============================
+                # RESTORE (client save data)
+                # ==============================
+                elif msg["type"] == "restore":
+                    # Restore farm state from client save data
+                    save = msg.get("save", {})
+                    if save:
+                        farm.gold = save.get("gold", GOLD_INITIAL)
+                        farm.xp = save.get("xp", 0)
+                        farm.level = save.get("level", 1)
+                        farm.completed_missions = set(save.get("completed_missions", []))
+                        farm.unlocked_achievements = set(save.get("unlocked_achievements", []))
+                        farm.planted_crop_types = set(save.get("planted_crop_types", []))
+                        farm.best_roi = save.get("best_roi", 0.0)
+                        farm.active_mission_idx = save.get("active_mission_idx", 0)
+                        farm.experienced_seasons = set(save.get("experienced_seasons", []))
                     await ws.send_json({
                         "type": "farm_state",
                         "farm": farm.snapshot()
                     })
 
-            # ==============================
-            # ABORT
-            # ==============================
-            elif msg["type"] == "abort":
+            except Exception as e:
+                # Error within a single message handler - send error but keep connection alive
                 executor = None
-                stop_idle_ticker()
-                await ws.send_json({"type": "done"})
-
-            # ==============================
-            # RESTORE (client save data)
-            # ==============================
-            elif msg["type"] == "restore":
-                # Restore farm state from client save data
-                save = msg.get("save", {})
-                if save:
-                    farm.gold = save.get("gold", GOLD_INITIAL)
-                    farm.xp = save.get("xp", 0)
-                    farm.level = save.get("level", 1)
-                    farm.completed_missions = set(save.get("completed_missions", []))
-                    farm.unlocked_achievements = set(save.get("unlocked_achievements", []))
-                    farm.planted_crop_types = set(save.get("planted_crop_types", []))
-                    farm.best_roi = save.get("best_roi", 0.0)
-                    farm.active_mission_idx = save.get("active_mission_idx", 0)
-                    farm.experienced_seasons = set(save.get("experienced_seasons", []))
-                await ws.send_json({
-                    "type": "farm_state",
-                    "farm": farm.snapshot()
-                })
+                try:
+                    await ws.send_json({
+                        "type": "error",
+                        "message": str(e),
+                        "line": getattr(e, "lineno", None)
+                    })
+                except Exception:
+                    pass
 
     except WebSocketDisconnect:
         stop_idle_ticker()
@@ -266,11 +297,7 @@ async def run_script(ws: WebSocket):
 
     except Exception as e:
         stop_idle_ticker()
-        await ws.send_json({
-            "type": "error",
-            "message": str(e),
-            "line": getattr(e, "lineno", None)
-        })
+        print(f"WebSocket fatal error: {e}")
 
 # ===============================
 # Auth & Progress API

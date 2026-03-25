@@ -30,10 +30,12 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 - 🏆 **21 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Season Surfer, Market Whale, Pest Free, Winter Survivor, and more)
 - 💡 **Hint system** with "Load into Editor" for guided learning
 
-### User Accounts
+### User Accounts & Premium
 - 👤 **Registration & Login** — create an account to save progress to the cloud
 - ☁️ **Cloud save** — game state syncs to server so you can continue on any device
 - 🔒 **Secure authentication** — SHA-256 password hashing with per-user salts
+- ⭐ **Premium upgrade** — first 5 missions free, unlock all 25 with one-time $9.90 payment
+- 💳 **Stripe payment** — secure credit card checkout via Stripe
 
 ### Python Features Supported
 - Variables, assignment, augmented assignment (`+=`, `-=`, etc.)
@@ -48,7 +50,7 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 
 ### UI & Experience
 - 🌙 **Dark mode** with toggle
-- 🌐 **Bilingual** — English / 简体中文 language switching
+- 🌐 **Multilingual** — English, 简体中文, Deutsch, Français
 - 💾 **Game state persistence** — progress saves to localStorage and restores on reload
 - ☁️ **Cloud save** — optional server-side persistence with user accounts
 - 🖥 **Visual feedback**: crop growth stages (seedling → sprout → mature), harvest particle effects, floating gold animations, pest indicators
@@ -215,7 +217,7 @@ Scripts can be executed:
 - Monaco Editor (via CDN) for Python editing
 - HTML5 Canvas (perspective grid rendering)
 - CSS with dark mode support
-- i18n (English / Chinese)
+- i18n (English, Chinese, German, French)
 
 ### Backend
 - Python 3
@@ -224,6 +226,7 @@ Scripts can be executed:
 - Custom Python AST-based script executor (safe sandboxed execution)
 - SQLite for user accounts and cloud save
 - Pydantic for request validation
+- Stripe for payment processing
 
 ---
 
@@ -241,13 +244,20 @@ cd cyber-farm
 pip install -r requirements.txt
 ```
 
-### 3. Start the server
+### 3. Configure Stripe (optional, for premium payments)
+```bash
+export STRIPE_SECRET_KEY="sk_live_..."
+export STRIPE_PUBLISHABLE_KEY="pk_live_..."
+export STRIPE_WEBHOOK_SECRET="whsec_..."  # optional, for webhook verification
+```
+
+### 4. Start the server
 ```bash
 cd backend
 uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
-### 4. Open in browser
+### 5. Open in browser
 
 http://localhost:8080
 
@@ -273,7 +283,7 @@ The long-term vision is to evolve Cyber Farm into a code-driven sandbox game whe
 - [x] Mission system with 25 progressive Python concepts
 - [x] XP, levels, and achievements (21 achievements)
 - [x] Dark mode
-- [x] Bilingual support (EN/CN)
+- [x] Bilingual support (EN/CN) → Multilingual (EN/ZH/DE/FR)
 - [x] Game state persistence (localStorage + cloud save)
 - [x] User-defined functions (`def`)
 - [x] User accounts and cloud-based persistent farms
@@ -282,6 +292,8 @@ The long-term vision is to evolve Cyber Farm into a code-driven sandbox game whe
 - [x] Dictionary and list method support
 - [x] Sound effects
 - [x] WebSocket auto-reconnection
+- [x] Premium subscription with Stripe payment ($9.90)
+- [x] Mission paywall (5 free, 20 premium)
 - [ ] More advanced Python features (classes, imports)
 - [ ] Script challenges and puzzles with leaderboards
 - [ ] Multiplayer / farm visiting

@@ -1252,3 +1252,164 @@ body.dark-mode .welcome-content {
     background: #78350f;
   }
 }
+
+/* ============================================================
+   Grid-to-Code: Mouse Mode
+============================================================ */
+
+.mouse-mode-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 6px;
+  line-height: 1;
+}
+.mouse-mode-btn:hover {
+  background: #e2e8f0;
+}
+.mouse-mode-btn.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+}
+body.dark-mode .mouse-mode-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+body.dark-mode .mouse-mode-btn:hover {
+  background: #475569;
+}
+body.dark-mode .mouse-mode-btn.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+/* Canvas cursor when mouse mode is active */
+#farmCanvas.mouse-mode-cursor {
+  cursor: crosshair;
+}
+
+/* Context menu */
+.grid-code-menu {
+  position: absolute;
+  z-index: 2000;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
+  padding: 4px;
+  min-width: 160px;
+  animation: gridMenuFadeIn 0.12s ease-out;
+}
+.grid-code-menu.hidden {
+  display: none;
+}
+@keyframes gridMenuFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.grid-code-title {
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.grid-code-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  color: #334155;
+  transition: background 0.1s;
+}
+.grid-code-item:hover {
+  background: #f1f5f9;
+}
+.grid-code-item .gc-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+.grid-code-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 8px;
+}
+
+/* Crop picker sub-menu */
+.grid-crop-picker {
+  min-width: 180px;
+  padding: 4px;
+}
+.grid-crop-picker .crop-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  color: #334155;
+  transition: background 0.1s;
+}
+.grid-crop-picker .crop-pick-item:hover {
+  background: #f0fdf4;
+}
+.grid-crop-picker .crop-pick-item .crop-pick-cost {
+  margin-left: auto;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Selection highlight for multi-cell */
+#farmCanvas.selecting {
+  cursor: crosshair;
+}
+
+/* Dark mode overrides for grid-code menu */
+body.dark-mode .grid-code-menu {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+body.dark-mode .grid-code-title {
+  color: #64748b;
+}
+body.dark-mode .grid-code-item {
+  color: #e2e8f0;
+}
+body.dark-mode .grid-code-item:hover {
+  background: #334155;
+}
+body.dark-mode .grid-code-divider {
+  background: #334155;
+}
+body.dark-mode .grid-crop-picker .crop-pick-item {
+  color: #e2e8f0;
+}
+body.dark-mode .grid-crop-picker .crop-pick-item:hover {
+  background: #1a2e1a;
+}
+body.dark-mode .grid-crop-picker .crop-pick-item .crop-pick-cost {
+  color: #64748b;
+}

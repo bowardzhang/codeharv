@@ -1485,6 +1485,7 @@ document.addEventListener("keydown", (e) => {
     if (missionsModal) missionsModal.classList.add("hidden");
     if (shareModal) shareModal.classList.add("hidden");
     if (premiumModal) premiumModal.classList.add("hidden");
+    hideGridMenus();
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
       wo.classList.add("hidden");
@@ -1628,6 +1629,18 @@ function applyLanguage() {
   if (premiumBuyBtn && !premiumBuyBtn.disabled) premiumBuyBtn.textContent = "💳 " + t("upgrade_btn");
   const premNote = document.getElementById("premiumLoginNote");
   if (premNote) premNote.textContent = t("login_required_for_premium");
+
+  // Grid-to-Code menu labels
+  const gcMenu = document.getElementById("gridCodeMenu");
+  if (gcMenu) {
+    gcMenu.querySelectorAll(".grid-code-item").forEach(item => {
+      const action = item.dataset.action;
+      const label = item.querySelector(".gc-label");
+      if (label && action) label.textContent = t("gc_" + action);
+    });
+  }
+  const mmBtn = document.getElementById("mouseModeBtn");
+  if (mmBtn) mmBtn.title = t("mouse_mode") + ": " + (t("grid_code_inserted") || "click farm to insert code");
 
   // Market info
   const marketInfo = document.querySelector("#marketModal .market-info p");
@@ -1817,6 +1830,305 @@ document.getElementById("shareDownload")?.addEventListener("click", () => {
   link.href = shareCanvas.toDataURL("image/png");
   link.click();
 });
+
+/* ============================================================
+   Grid-to-Code: Mouse Mode
+============================================================ */
+
+let mouseMode = false;
+const mouseModeBtn = document.getElementById("mouseModeBtn");
+const gridCodeMenu = document.getElementById("gridCodeMenu");
+const gridCropPicker = document.getElementById("gridCropPicker");
+let gridCodeTarget = null;        // { x, y } of clicked cell
+let selectionStart = null;        // { x, y } for drag-select
+let selectionEnd = null;          // { x, y } for drag-select
+let isSelecting = false;
+
+mouseModeBtn.addEventListener("click", () => {
+  mouseMode = !mouseMode;
+  mouseModeBtn.classList.toggle("active", mouseMode);
+  canvas.classList.toggle("mouse-mode-cursor", mouseMode);
+  hideGridMenus();
+  selectionStart = null;
+  selectionEnd = null;
+  isSelecting = false;
+  drawScene(currentFarm);
+});
+
+function hideGridMenus() {
+  gridCodeMenu.classList.add("hidden");
+  gridCropPicker.classList.add("hidden");
+}
+
+// Close menus on outside click
+document.addEventListener("mousedown", (e) => {
+  if (!gridCodeMenu.contains(e.target) && !gridCropPicker.contains(e.target)) {
+    hideGridMenus();
+  }
+});
+
+// Get grid cell from mouse position on canvas
+function canvasMouseToCell(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  for (let y = 0; y < GRID; y++) {
+    for (let x = 0; x < GRID; x++) {
+      const quad = getCellCorners(x, y);
+      if (pointInQuad({ x: mx, y: my }, quad)) {
+        return { x, y };
+      }
+    }
+  }
+  return null;
+}
+
+// Position menu near a canvas cell, but keep it within viewport
+function positionMenuNearCell(menu, cell) {
+  const corners = getCellCorners(cell.x, cell.y);
+  const cx = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4;
+  const cy = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4;
+
+  const canvasRect = canvas.getBoundingClientRect();
+  let left = canvasRect.left + cx + 10;
+  let top = canvasRect.top + cy - 20;
+
+  // Ensure the menu stays within the viewport
+  menu.classList.remove("hidden");
+  const menuRect = menu.getBoundingClientRect();
+  if (left + menuRect.width > window.innerWidth - 8) {
+    left = canvasRect.left + cx - menuRect.width - 10;
+  }
+  if (top + menuRect.height > window.innerHeight - 8) {
+    top = window.innerHeight - menuRect.height - 8;
+  }
+  if (top < 8) top = 8;
+
+  menu.style.position = "fixed";
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+}
+
+// Append code at end of editor
+function appendToEditor(code) {
+  const model = editor.getModel();
+  const lastLine = model.getLineCount();
+  const lastCol = model.getLineMaxColumn(lastLine);
+  const lastLineContent = model.getLineContent(lastLine);
+  const prefix = lastLineContent.trim() === "" ? "" : "\n";
+  editor.executeEdits("grid-to-code", [{
+    range: new monaco.Range(lastLine, lastCol, lastLine, lastCol),
+    text: prefix + code + "\n"
+  }]);
+  // Scroll to bottom and focus
+  const newLastLine = model.getLineCount();
+  editor.revealLine(newLastLine);
+  editor.setPosition({ lineNumber: newLastLine, column: 1 });
+  editor.focus();
+}
+
+// Generate code for single cell action
+function codeForAction(action, x, y, crop) {
+  switch (action) {
+    case "plant":     return `plant("${crop}", ${x}, ${y})`;
+    case "water":     return `water(${x}, ${y})`;
+    case "fertilize": return `fertilize(${x}, ${y})`;
+    case "harvest":   return `harvest(${x}, ${y})`;
+    case "sell":      return `sell(${x}, ${y})`;
+    case "remove_pest": return `remove_pest(${x}, ${y})`;
+    case "status":    return `print(get_status(${x}, ${y}))`;
+    case "is_mature": return `print(is_mature(${x}, ${y}))`;
+    default:          return "";
+  }
+}
+
+// Generate loop code for a rectangular selection
+function codeForSelection(action, x0, y0, x1, y1, crop) {
+  const minX = Math.min(x0, x1), maxX = Math.max(x0, x1);
+  const minY = Math.min(y0, y1), maxY = Math.max(y0, y1);
+  const w = maxX - minX + 1;
+  const h = maxY - minY + 1;
+
+  // Single cell — no loop needed
+  if (w === 1 && h === 1) return codeForAction(action, minX, minY, crop);
+
+  // Build the inner statement with variable names
+  function innerCode(xVar, yVar) {
+    switch (action) {
+      case "plant":       return `plant("${crop}", ${xVar}, ${yVar})`;
+      case "water":       return `water(${xVar}, ${yVar})`;
+      case "fertilize":   return `fertilize(${xVar}, ${yVar})`;
+      case "harvest":     return `harvest(${xVar}, ${yVar})`;
+      case "sell":        return `sell(${xVar}, ${yVar})`;
+      case "remove_pest": return `remove_pest(${xVar}, ${yVar})`;
+      case "status":      return `print(get_status(${xVar}, ${yVar}))`;
+      case "is_mature":   return `print(is_mature(${xVar}, ${yVar}))`;
+      default:            return "";
+    }
+  }
+
+  const xRange = w === GRID && minX === 0 ? `range(${GRID})` : `range(${minX}, ${maxX + 1})`;
+  const yRange = h === GRID && minY === 0 ? `range(${GRID})` : `range(${minY}, ${maxY + 1})`;
+
+  // Single row
+  if (h === 1) {
+    return `for x in ${xRange}:\n    ${innerCode("x", minY)}`;
+  }
+
+  // Single column
+  if (w === 1) {
+    return `for y in ${yRange}:\n    ${innerCode(minX, "y")}`;
+  }
+
+  // Rectangle — nested loops
+  return `for y in ${yRange}:\n    for x in ${xRange}:\n        ${innerCode("x", "y")}`;
+}
+
+// Draw selection highlight overlay
+function drawSelectionOverlay() {
+  if (!selectionStart || !selectionEnd) return;
+  const minX = Math.min(selectionStart.x, selectionEnd.x);
+  const maxX = Math.max(selectionStart.x, selectionEnd.x);
+  const minY = Math.min(selectionStart.y, selectionEnd.y);
+  const maxY = Math.max(selectionStart.y, selectionEnd.y);
+  ctx.save();
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const corners = getCellCorners(x, y);
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i].x, corners[i].y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(59, 130, 246, 0.25)";
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.7)";
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// Canvas mousedown — start selection or show menu
+canvas.addEventListener("mousedown", (e) => {
+  if (!mouseMode || e.button !== 0) return;
+  const cell = canvasMouseToCell(e);
+  if (!cell) return;
+  hideGridMenus();
+  selectionStart = cell;
+  selectionEnd = cell;
+  isSelecting = true;
+});
+
+// Canvas mousemove — update selection during drag
+const origMouseMove = canvas.onmousemove;
+canvas.addEventListener("mousemove", (e) => {
+  if (!mouseMode || !isSelecting) return;
+  const cell = canvasMouseToCell(e);
+  if (cell && (cell.x !== selectionEnd?.x || cell.y !== selectionEnd?.y)) {
+    selectionEnd = cell;
+    drawScene(currentFarm);
+    drawSelectionOverlay();
+  }
+});
+
+// Canvas mouseup — finalize selection and show menu
+canvas.addEventListener("mouseup", (e) => {
+  if (!mouseMode || !isSelecting) return;
+  isSelecting = false;
+  const cell = canvasMouseToCell(e);
+  if (cell) selectionEnd = cell;
+
+  if (!selectionStart) return;
+
+  gridCodeTarget = { ...selectionStart };
+  const isSingle = selectionStart.x === selectionEnd.x && selectionStart.y === selectionEnd.y;
+
+  // Update menu label
+  const label = document.getElementById("gridCodeCellLabel");
+  if (isSingle) {
+    label.textContent = `(${selectionStart.x}, ${selectionStart.y})`;
+  } else {
+    const minX = Math.min(selectionStart.x, selectionEnd.x);
+    const maxX = Math.max(selectionStart.x, selectionEnd.x);
+    const minY = Math.min(selectionStart.y, selectionEnd.y);
+    const maxY = Math.max(selectionStart.y, selectionEnd.y);
+    const count = (maxX - minX + 1) * (maxY - minY + 1);
+    label.textContent = `(${minX},${minY})→(${maxX},${maxY}) [${count} cells]`;
+  }
+
+  // Draw selection overlay
+  drawScene(currentFarm);
+  drawSelectionOverlay();
+
+  positionMenuNearCell(gridCodeMenu, selectionEnd);
+});
+
+// Prevent canvas click from propagating when in mouse mode
+canvas.addEventListener("click", (e) => {
+  if (mouseMode) {
+    e.stopPropagation();
+  }
+});
+
+// Handle action button clicks
+gridCodeMenu.addEventListener("click", (e) => {
+  const item = e.target.closest(".grid-code-item");
+  if (!item) return;
+  const action = item.dataset.action;
+
+  if (action === "plant") {
+    // Show crop picker
+    buildCropPicker();
+    const menuRect = gridCodeMenu.getBoundingClientRect();
+    gridCropPicker.style.position = "fixed";
+    gridCropPicker.style.left = (menuRect.right + 4) + "px";
+    gridCropPicker.style.top = menuRect.top + "px";
+    gridCropPicker.classList.remove("hidden");
+    // Reposition if overflows right
+    const pickerRect = gridCropPicker.getBoundingClientRect();
+    if (pickerRect.right > window.innerWidth - 8) {
+      gridCropPicker.style.left = (menuRect.left - pickerRect.width - 4) + "px";
+    }
+    if (pickerRect.bottom > window.innerHeight - 8) {
+      gridCropPicker.style.top = (window.innerHeight - pickerRect.height - 8) + "px";
+    }
+    return;
+  }
+
+  // Generate and insert code
+  insertActionCode(action);
+});
+
+function insertActionCode(action, crop) {
+  const isSingle = selectionStart.x === selectionEnd.x && selectionStart.y === selectionEnd.y;
+  let code;
+  if (isSingle) {
+    code = codeForAction(action, selectionStart.x, selectionStart.y, crop);
+  } else {
+    code = codeForSelection(action, selectionStart.x, selectionStart.y, selectionEnd.x, selectionEnd.y, crop);
+  }
+  appendToEditor(code);
+  hideGridMenus();
+  selectionStart = null;
+  selectionEnd = null;
+  drawScene(currentFarm);
+  log(`🖱 ${t("grid_code_inserted") || "Code inserted from farm click"}`, "#3b82f6");
+}
+
+// Build crop picker buttons
+function buildCropPicker() {
+  gridCropPicker.innerHTML = `<div class="grid-code-title">${t("gc_select_crop")}</div>`;
+  for (const [name, info] of Object.entries(cropData)) {
+    const btn = document.createElement("button");
+    btn.className = "crop-pick-item";
+    btn.innerHTML = `<span>${info.emoji}</span> <span>${name}</span> <span class="crop-pick-cost">${info.cost}g</span>`;
+    btn.addEventListener("click", () => {
+      insertActionCode("plant", name);
+    });
+    gridCropPicker.appendChild(btn);
+  }
+}
 
 /* ============================================================
    Init

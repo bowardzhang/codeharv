@@ -72,11 +72,29 @@
       <span>Farm View</span>
       <span id="resource">💰 0 | 🕒 0</span>
       <span id="pestCount" class="pest-badge hidden">🐛 0</span>
+      <button id="mouseModeBtn" class="mouse-mode-btn" title="Mouse Mode: click farm to insert code">🖱</button>
     </div>
     <div id="farmContainer">
       <canvas id="farmCanvas"></canvas>
     </div>
     <div id="cellTooltip" class="tooltip hidden"></div>
+
+    <!-- Grid-to-Code context menu -->
+    <div id="gridCodeMenu" class="grid-code-menu hidden">
+      <div class="grid-code-title"><span id="gridCodeCellLabel">(0, 0)</span></div>
+      <button class="grid-code-item" data-action="plant"><span class="gc-icon">🌱</span> <span class="gc-label">Plant</span></button>
+      <button class="grid-code-item" data-action="water"><span class="gc-icon">💧</span> <span class="gc-label">Water</span></button>
+      <button class="grid-code-item" data-action="fertilize"><span class="gc-icon">🧪</span> <span class="gc-label">Fertilize</span></button>
+      <button class="grid-code-item" data-action="harvest"><span class="gc-icon">🌾</span> <span class="gc-label">Harvest</span></button>
+      <button class="grid-code-item" data-action="sell"><span class="gc-icon">💰</span> <span class="gc-label">Sell</span></button>
+      <button class="grid-code-item" data-action="remove_pest"><span class="gc-icon">🐛</span> <span class="gc-label">Remove Pest</span></button>
+      <div class="grid-code-divider"></div>
+      <button class="grid-code-item" data-action="status"><span class="gc-icon">📊</span> <span class="gc-label">Get Status</span></button>
+      <button class="grid-code-item" data-action="is_mature"><span class="gc-icon">✅</span> <span class="gc-label">Check Mature</span></button>
+    </div>
+
+    <!-- Grid-to-Code crop picker (sub-menu) -->
+    <div id="gridCropPicker" class="grid-code-menu grid-crop-picker hidden"></div>
 
     <div id="missionPanel">
       <div class="mission-header">

@@ -167,6 +167,12 @@ async def run_script(ws: WebSocket):
                     # Reset time (but keep gold)
                     farm.time = 0
 
+                    # Reset grid for fresh script run
+                    for y in range(farm.grid_size):
+                        for x in range(farm.grid_size):
+                            farm.grid[y][x] = farm._empty_cell()
+                    farm.pests.clear()
+
                     # ---- reset script execution stats ----
                     farm.script_cost = 0
                     farm.script_gain = 0
@@ -174,6 +180,13 @@ async def run_script(ws: WebSocket):
                     # ---- reset per-script tracking ----
                     farm.pest_removed_count = 0
                     farm.market_sell_gain = 0
+
+                    # ---- reset action history ----
+                    farm.has_planted = False
+                    farm.has_watered = False
+                    farm.has_harvested = False
+                    farm.max_planted_in_row0 = 0
+                    farm.harvested_in_winter = False
 
                     # ---- reset print log ----
                     farm.print_log = []
@@ -288,6 +301,9 @@ async def run_script(ws: WebSocket):
                         farm.best_roi = save.get("best_roi", 0.0)
                         farm.active_mission_idx = save.get("active_mission_idx", 0)
                         farm.experienced_seasons = set(save.get("experienced_seasons", []))
+                        farm.pest_removed_count = save.get("pest_removed_count", 0)
+                        farm.market_sell_gain = save.get("market_sell_gain", 0)
+                        farm.harvested_in_winter = save.get("harvested_in_winter", False)
                     await ws.send_json({
                         "type": "farm_state",
                         "farm": farm.snapshot()

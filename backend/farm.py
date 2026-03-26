@@ -332,7 +332,7 @@ MISSIONS = [
         "id": "m18",
         "title": "Pest Controller",
         "desc": "Use has_pest() and remove_pest() to handle pests.",
-        "hint": "if has_pest(0, 0):\n    remove_pest(0, 0)",
+        "hint": "# Plant and wait for pests to appear\nfor y in range(6):\n    for x in range(6):\n        plant(\"grass\", x, y)\nwait(30)\nfor y in range(6):\n    for x in range(6):\n        if has_pest(x, y):\n            remove_pest(x, y)",
         "xp_reward": 70,
         "gold_reward": 90,
         "concept": "Boolean Logic",
@@ -493,7 +493,9 @@ class Farm:
         }
 
     def _check_bounds(self, x: int, y: int) -> None:
-        """Raise ValueError if (x, y) is outside the grid."""
+        """Raise ValueError if (x, y) is outside the grid or not integers."""
+        if not isinstance(x, int) or not isinstance(y, int):
+            raise ValueError(f"Coordinates must be integers, got ({type(x).__name__}, {type(y).__name__})")
         if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
             raise ValueError(f"Position ({x}, {y}) is out of range. Valid range: 0-{self.grid_size - 1}")
 

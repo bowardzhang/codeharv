@@ -38,6 +38,12 @@ class Executor:
         self.steps += 1
         node = self.stack.pop()
 
+        # Handle tuple unpacking assignment from for-loop
+        if isinstance(node, tuple) and node[0] == "_unpack_assign":
+            _, target, value = node
+            self._assign_target(target, value)
+            return self.step()
+
         if self.start_time and time.time() - self.start_time > self.MAX_TIMEOUT:
             raise ScriptError(node, "Script timeout")
 
@@ -58,17 +64,13 @@ class Executor:
         # for loop
         if isinstance(node, ast.For):
             iterable = self.eval(node.iter)
-            target = node.target.id
+            target = node.target
 
             for value in reversed(iterable):
                 for stmt in reversed(node.body):
                     self.stack.append(stmt)
-                self.stack.append(
-                    ast.Assign(
-                        targets=[ast.Name(id=target, ctx=ast.Store())],
-                        value=ast.Constant(value=value)
-                    )
-                )
+                # Support tuple unpacking: for x, y in ...
+                self.stack.append(("_unpack_assign", target, value))
             return self.step()
 
         # while loop (with iteration guard)
@@ -78,7 +80,7 @@ class Executor:
         # assignment
         if isinstance(node, ast.Assign):
             value = self.eval(node.value)
-            self.ctx[node.targets[0].id] = value
+            self._assign_target(node.targets[0], value)
             return self.step()
 
         # augmented assignment (+=, -=, *=, etc.)
@@ -107,6 +109,23 @@ class Executor:
             return result
 
         raise ScriptError(node, "Unsupported syntax")
+
+    def _assign_target(self, target, value):
+        """Assign a value to a target, supporting tuple unpacking."""
+        if isinstance(target, ast.Name):
+            self.ctx[target.id] = value
+        elif isinstance(target, ast.Tuple) or isinstance(target, ast.List):
+            # Tuple/list unpacking: for x, y in ...
+            try:
+                values = list(value)
+            except TypeError:
+                raise ScriptError(target, f"Cannot unpack non-iterable {type(value).__name__}")
+            if len(target.elts) != len(values):
+                raise ScriptError(target, f"Cannot unpack: expected {len(target.elts)} values, got {len(values)}")
+            for t, v in zip(target.elts, values):
+                self._assign_target(t, v)
+        else:
+            raise ScriptError(target, "Unsupported assignment target")
 
     def _exec_while(self, node):
         """Execute a while loop with iteration guard."""
@@ -183,10 +202,10 @@ class Executor:
 
         if isinstance(node, ast.For):
             iterable = self.eval(node.iter)
-            target = node.target.id
+            target = node.target
             last_ev = None
             for value in iterable:
-                self.ctx[target] = value
+                self._assign_target(target, value)
                 for stmt in node.body:
                     self.steps += 1
                     if self.steps > self.MAX_STEPS:
@@ -202,7 +221,7 @@ class Executor:
 
         if isinstance(node, ast.Assign):
             value = self.eval(node.value)
-            self.ctx[node.targets[0].id] = value
+            self._assign_target(node.targets[0], value)
             return None
 
         if isinstance(node, ast.AugAssign):
@@ -315,6 +334,35 @@ class Executor:
                 return range(*args)
             except TypeError:
                 raise ScriptError(node, "Invalid range() arguments")
+        elif func == "enumerate":
+            if not args or len(args) > 2:
+                raise ScriptError(node, "enumerate() takes 1 or 2 arguments")
+            start = args[1] if len(args) == 2 else 0
+            return list(enumerate(args[0], start))
+        elif func == "sorted":
+            if len(args) != 1:
+                raise ScriptError(node, "sorted() takes exactly 1 argument")
+            try:
+                return sorted(args[0])
+            except TypeError as e:
+                raise ScriptError(node, str(e))
+        elif func == "list":
+            if len(args) == 0:
+                return []
+            if len(args) == 1:
+                try:
+                    return list(args[0])
+                except TypeError as e:
+                    raise ScriptError(node, str(e))
+            raise ScriptError(node, "list() takes 0 or 1 arguments")
+        elif func == "sum":
+            if not args or len(args) > 2:
+                raise ScriptError(node, "sum() takes 1 or 2 arguments")
+            start = args[1] if len(args) == 2 else 0
+            try:
+                return sum(args[0], start)
+            except TypeError as e:
+                raise ScriptError(node, str(e))
         else:
             raise ScriptError(node, f"Unknown function: {func}")
 
@@ -417,6 +465,39 @@ class Executor:
                     raise ScriptError(node, "type() takes exactly 1 argument")
                 t = type(args[0]).__name__
                 return t
+            if func_name == "enumerate":
+                args = [self.eval(a) for a in node.args]
+                if not args or len(args) > 2:
+                    raise ScriptError(node, "enumerate() takes 1 or 2 arguments")
+                start = args[1] if len(args) == 2 else 0
+                return list(enumerate(args[0], start))
+            if func_name == "sorted":
+                args = [self.eval(a) for a in node.args]
+                if len(args) != 1:
+                    raise ScriptError(node, "sorted() takes exactly 1 argument")
+                try:
+                    return sorted(args[0])
+                except TypeError as e:
+                    raise ScriptError(node, str(e))
+            if func_name == "list":
+                args = [self.eval(a) for a in node.args]
+                if len(args) == 0:
+                    return []
+                if len(args) == 1:
+                    try:
+                        return list(args[0])
+                    except TypeError as e:
+                        raise ScriptError(node, str(e))
+                raise ScriptError(node, "list() takes 0 or 1 arguments")
+            if func_name == "sum":
+                args = [self.eval(a) for a in node.args]
+                if not args or len(args) > 2:
+                    raise ScriptError(node, "sum() takes 1 or 2 arguments")
+                start = args[1] if len(args) == 2 else 0
+                try:
+                    return sum(args[0], start)
+                except TypeError as e:
+                    raise ScriptError(node, str(e))
             # Check user-defined functions in context
             if func_name in self.ctx and callable(self.ctx[func_name]):
                 args = [self.eval(a) for a in node.args]
@@ -480,6 +561,10 @@ class Executor:
                     result = left <= right
                 elif isinstance(op, ast.NotEq):
                     result = left != right
+                elif isinstance(op, ast.In):
+                    result = left in right
+                elif isinstance(op, ast.NotIn):
+                    result = left not in right
                 else:
                     raise ScriptError(node, "Unsupported comparison")
                 if not result:
@@ -525,10 +610,20 @@ class Executor:
                     parts.append(str(self.eval(value)))
             return "".join(parts)
 
-        # Subscript (indexing): e.g. my_list[0]
+        # Subscript (indexing and slicing): e.g. my_list[0], my_list[1:3]
         if isinstance(node, ast.Subscript):
             obj = self.eval(node.value)
-            idx = self.eval(node.slice)
+            slc = node.slice
+            # Handle slice syntax: obj[start:stop] or obj[start:stop:step]
+            if isinstance(slc, ast.Slice):
+                lower = self.eval(slc.lower) if slc.lower else None
+                upper = self.eval(slc.upper) if slc.upper else None
+                step = self.eval(slc.step) if slc.step else None
+                try:
+                    return obj[lower:upper:step]
+                except (IndexError, TypeError) as e:
+                    raise ScriptError(node, str(e))
+            idx = self.eval(slc)
             try:
                 return obj[idx]
             except (IndexError, KeyError, TypeError) as e:

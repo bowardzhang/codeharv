@@ -492,7 +492,13 @@ class Farm:
             "nutrient": 0.5,
         }
 
+    def _check_bounds(self, x: int, y: int) -> None:
+        """Raise ValueError if (x, y) is outside the grid."""
+        if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
+            raise ValueError(f"Position ({x}, {y}) is out of range. Valid range: 0-{self.grid_size - 1}")
+
     def _cell(self, x: int, y: int) -> Dict[str, Any]:
+        self._check_bounds(x, y)
         return self.grid[y][x]
 
     # ---------- Events ----------
@@ -537,7 +543,8 @@ class Farm:
     def get_price(self, crop: str) -> float:
         """Return current market sell price for a crop."""
         if crop not in CROPS:
-            raise ValueError(f"Unknown crop: {crop}")
+            available = ", ".join(f'"{c}"' for c in CROPS)
+            raise ValueError(f"Unknown crop: \"{crop}\". Available crops: {available}")
         return self.market_prices.get(crop, CROPS[crop]["harvest_gain"])
 
     def get_market(self) -> Dict[str, float]:
@@ -554,12 +561,21 @@ class Farm:
                 self.market_prices[crop] = round(base * (1.0 + fluctuation), 1)
 
     # ---------- Pest System ----------
-    def has_pest(self, x: int, y: int) -> Optional[str]:
-        """Return pest type at (x, y) or None."""
-        return self.pests.get((x, y), None)
+    def has_pest(self, x: int, y: int) -> bool:
+        """Return True if there is a pest at (x, y), False otherwise."""
+        self._check_bounds(x, y)
+        return (x, y) in self.pests
 
-    def get_pests(self) -> List[Dict[str, Any]]:
-        """Return list of {x, y, type} for all active pests."""
+    def get_pests(self) -> List[List]:
+        """Return list of [x, y, type] for all active pests.
+        Each entry can be accessed via p[0] (x), p[1] (y), p[2] (type)."""
+        return [
+            [pos[0], pos[1], ptype]
+            for pos, ptype in self.pests.items()
+        ]
+
+    def _get_pests_snapshot(self) -> List[Dict[str, Any]]:
+        """Return pests as dicts for frontend snapshot (uses .x, .y, .type access)."""
         return [
             {"x": pos[0], "y": pos[1], "type": ptype}
             for pos, ptype in self.pests.items()
@@ -567,6 +583,7 @@ class Farm:
 
     def remove_pest(self, x: int, y: int) -> Dict[str, Any]:
         """Remove pest at (x, y). Costs PEST_REMOVE_COST gold."""
+        self._check_bounds(x, y)
         if (x, y) not in self.pests:
             raise ValueError("No pest at this location")
         if self.gold < PEST_REMOVE_COST:
@@ -893,10 +910,14 @@ class Farm:
 
     # ---------- API ----------
     def plant(self, crop: str, x: int, y: int) -> Dict[str, Any]:
+        if not isinstance(crop, str):
+            raise ValueError(f"plant(crop, x, y): first argument must be a crop name string like \"grass\", got {type(crop).__name__}")
         if crop not in CROPS:
-            raise ValueError(f"Unknown crop: {crop}")
+            available = ", ".join(f'"{c}"' for c in CROPS)
+            raise ValueError(f"Unknown crop: \"{crop}\". Available crops: {available}")
 
-        cell = self._cell(x, y)
+        self._check_bounds(x, y)
+        cell = self.grid[y][x]
         if cell["type"] is not None:
             raise ValueError("Cell already occupied")
 
@@ -1165,7 +1186,7 @@ class Farm:
             "season": self.season,
             "season_info": SEASONS[self.season],
             "market_prices": dict(self.market_prices),
-            "pests": self.get_pests(),
+            "pests": self._get_pests_snapshot(),
             "xp": self.xp,
             "level": self.level,
             "level_title": LEVELS[self.level - 1]["title"],

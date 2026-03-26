@@ -73,12 +73,15 @@ window.__editor = editor;
 
 let currentLineDecoration = [];
 
-function highlightLine(line) {
+function highlightLine(line, isError) {
   currentLineDecoration = editor.deltaDecorations(
     currentLineDecoration,
     [{
       range: new monaco.Range(line, 1, line, 1),
-      options: { isWholeLine: true, className: 'current-line-highlight' }
+      options: {
+        isWholeLine: true,
+        className: isError ? 'error-line-highlight' : 'current-line-highlight'
+      }
     }]
   );
 }
@@ -1252,12 +1255,17 @@ async function wsOnMessage(e) {
   }
 
   if (msg.type === "error") {
-    log("[error] " + msg.message);
+    log("[error] " + msg.message, "#ef4444");
     sfxError();
+    // Highlight the error line in red if available
+    if (msg.line) {
+      highlightLine(msg.line, true);
+    } else {
+      clearHighlight();
+    }
     executionActive = false;
     autoPaused = false;
     executionMode = null;
-    clearHighlight();
     setButtonsIdle();
   }
 }

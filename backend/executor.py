@@ -355,7 +355,8 @@ class Executor:
                 return False
             if node.id == "None":
                 return None
-            return None
+            raise ScriptError(node, f"Undefined variable: '{node.id}'")
+
 
         # Function calls in expressions (range, is_mature, get_weather, len, etc.)
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):

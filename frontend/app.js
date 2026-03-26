@@ -416,20 +416,27 @@ function updateResource(gold, time) {
 
 function updateWeatherDisplay(farm) {
   if (!farm || !farm.weather_info) return;
-  weatherDisplay.textContent = `${farm.weather_info.emoji} ${capitalize(farm.weather || 'sunny')}`;
+  const key = "weather_" + (farm.weather || "sunny");
+  const name = t(key) !== key ? t(key) : capitalize(farm.weather || "sunny");
+  weatherDisplay.textContent = `${farm.weather_info.emoji} ${name}`;
 }
 
 const seasonDisplay = document.getElementById("seasonDisplay");
 
 function updateSeasonDisplay(farm) {
   if (!farm || !farm.season_info) return;
-  seasonDisplay.textContent = `${farm.season_info.emoji} ${capitalize(farm.season || 'spring')}`;
+  const key = "season_" + (farm.season || "spring");
+  const name = t(key) !== key ? t(key) : capitalize(farm.season || "spring");
+  seasonDisplay.textContent = `${farm.season_info.emoji} ${name}`;
 }
 
 function updateLevelDisplay(farm) {
   if (!farm || farm.level === undefined) return;
   const level = farm.level;
-  const title = farm.level_title || (farm.levels && farm.levels[level - 1] ? farm.levels[level - 1].title : "");
+  const rawTitle = farm.level_title || (farm.levels && farm.levels[level - 1] ? farm.levels[level - 1].title : "");
+  // Translate level title if key exists, e.g. "level_seed_planter"
+  const titleKey = "level_" + rawTitle.toLowerCase().replace(/\s+/g, "_");
+  const title = t(titleKey) !== titleKey ? t(titleKey) : rawTitle;
   levelText.textContent = `Lv.${level} ${title}`;
 
   // XP progress bar
@@ -1415,13 +1422,23 @@ function capitalize(s) {
 
 function showCellTooltip(p, x, y) {
   const cell = currentFarm.grid[y][x];
+  // Check for pest at this cell
+  let pestHtml = "";
+  if (currentFarm.pests) {
+    const pest = currentFarm.pests.find(pe => pe.x === x && pe.y === y);
+    if (pest) {
+      const pestEmoji = pest.type === "bug" ? "🐛" : pest.type === "weed" ? "🌵" : "❄️";
+      const pestName = t("pest_" + pest.type) || capitalize(pest.type);
+      pestHtml = `<br><span style="color:#ef4444;">${pestEmoji} ${t("pest")}: ${pestName}</span>`;
+    }
+  }
   let html = "";
   if (!cell || !cell.type) {
     html = `
       <b>${t("empty_plot")}</b><br>
       📍 ${t("position")}: (${x}, ${y})<br>
       💧 ${t("water")}: ${Math.round((cell?.water ?? 0) * 100)}%<br>
-      🌱 ${t("nutrition")}: ${Math.round((cell?.nutrient ?? 0) * 100)}%
+      🌱 ${t("nutrition")}: ${Math.round((cell?.nutrient ?? 0) * 100)}%${pestHtml}
     `;
   } else {
     const waterPct = Math.round((cell.water ?? 0) * 100);
@@ -1436,7 +1453,7 @@ function showCellTooltip(p, x, y) {
       <b>${capitalize(cell.type)}${maturityDisplay}</b><br>
       📍 ${t("position")}: (${x}, ${y})<br>
       💧 ${t("water")}: ${waterPct}%<br>
-      🌱 ${t("nutrition")}: ${nutritionPct}%
+      🌱 ${t("nutrition")}: ${nutritionPct}%${pestHtml}
     `;
   }
   tooltip.innerHTML = html;
@@ -1639,8 +1656,6 @@ function applyLanguage() {
       if (label && action) label.textContent = t("gc_" + action);
     });
   }
-  const mmBtn = document.getElementById("mouseModeBtn");
-  if (mmBtn) mmBtn.title = t("mouse_mode") + ": " + (t("grid_code_inserted") || "click farm to insert code");
 
   // Market info
   const marketInfo = document.querySelector("#marketModal .market-info p");
@@ -1686,6 +1701,10 @@ function applyLanguage() {
   if (currentMissions.length) updateMissionPanel(currentMissions);
   // Re-render achievements
   if (currentAchievements.length) renderAchievements();
+  // Re-render weather, season, level
+  updateWeatherDisplay(currentFarm);
+  updateSeasonDisplay(currentFarm);
+  updateLevelDisplay(currentFarm);
 }
 
 /* ============================================================
@@ -1832,11 +1851,10 @@ document.getElementById("shareDownload")?.addEventListener("click", () => {
 });
 
 /* ============================================================
-   Grid-to-Code: Mouse Mode
+   Grid-to-Code
 ============================================================ */
 
-let mouseMode = false;
-const mouseModeBtn = document.getElementById("mouseModeBtn");
+let mouseMode = true;
 const gridCodeMenu = document.getElementById("gridCodeMenu");
 const gridCropPicker = document.getElementById("gridCropPicker");
 let gridCodeTarget = null;        // { x, y } of clicked cell
@@ -1844,16 +1862,7 @@ let selectionStart = null;        // { x, y } for drag-select
 let selectionEnd = null;          // { x, y } for drag-select
 let isSelecting = false;
 
-mouseModeBtn.addEventListener("click", () => {
-  mouseMode = !mouseMode;
-  mouseModeBtn.classList.toggle("active", mouseMode);
-  canvas.classList.toggle("mouse-mode-cursor", mouseMode);
-  hideGridMenus();
-  selectionStart = null;
-  selectionEnd = null;
-  isSelecting = false;
-  drawScene(currentFarm);
-});
+canvas.classList.add("mouse-mode-cursor");
 
 function hideGridMenus() {
   gridCodeMenu.classList.add("hidden");

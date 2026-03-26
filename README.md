@@ -297,7 +297,8 @@ The long-term vision is to evolve Cyber Farm into a code-driven sandbox game whe
 - [ ] More advanced Python features (classes, imports)
 - [ ] Script challenges and puzzles with leaderboards
 - [ ] Multiplayer / farm visiting
-- [ ] Mobile-friendly responsive UI
+- [x] Mobile-friendly responsive UI
+- [x] Social sharing (Twitter/X, Facebook, WhatsApp, WeChat)
 
 ---
 

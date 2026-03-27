@@ -1,64 +1,67 @@
-![Screenshot](CyberFarm_Screenshot.png?raw=true "Screenshot")
+![Screenshot](CodeHarv_Screenshot.png?raw=true "Screenshot")
 
-# 🌱 Cyber Farm
+# 🌱 Code Harv
 
-**Cyber Farm** is a browser-based farming simulation game designed to help users learn **Python programming basics through gameplay**.
+**Code Harv** is a browser-based farming simulation game designed to help users learn **Python programming basics through gameplay**.
 
 Instead of clicking buttons to farm, players **write Python scripts** to control planting, watering, fertilizing, and harvesting crops.
-Your code directly affects the farm — if your logic is good, your farm thrives 🌾.
+Your code directly affects the farm — if your logic is good, your farm thrives.
+
+**Code to Harvest** — harvest crops on the farm, and harvest programming knowledge along the way.
 
 ---
 
 ## ✨ Features
 
 ### Core Gameplay
-- 🧠 **Learn Python by coding** — use real Python syntax to control the farm
-- 🌱 **Grid-based farming system** (6×6) with crops, growth, and resources
-- 💧 Actions: **plant, water, fertilize, wait, harvest, sell, clear**
-- ⏱ **Time-based crop growth** with maturity simulation
-- 🌦 **Dynamic weather system** — sunny, rainy, cloudy, windy, drought affect growth
-- 🌸 **Season system** — spring, summer, autumn, winter cycle with seasonal growth modifiers
-- 💹 **Market system** — dynamic crop prices that fluctuate over time; sell at market for profit
-- 🐛 **Pest system** — bugs, weeds, and frost can appear on crops, slowing growth
-- 📊 Script execution statistics (cost, gain, ROI)
-- 🔊 **Sound effects** — audio feedback for planting, harvesting, level-ups, and errors
+- **Learn Python by coding** — use real Python syntax to control the farm
+- **Grid-based farming system** (6×6) with crops, growth, and resources
+- Actions: **plant, water, fertilize, wait, harvest, sell, clear**
+- **Time-based crop growth** with maturity simulation
+- **Dynamic weather system** — sunny, rainy, cloudy, windy, drought affect growth
+- **Season system** — spring, summer, autumn, winter cycle with seasonal growth modifiers
+- **Market system** — dynamic crop prices that fluctuate over time; sell at market for profit
+- **Pest system** — bugs, weeds, and frost can appear on crops, slowing growth
+- Script execution statistics (cost, gain, ROI)
+- **Sound effects** — audio feedback for planting, harvesting, level-ups, and errors
 
 ### Mission & Progression System
-- 📋 **25 progressive missions** teaching Python concepts step by step:
+- **25 progressive missions** teaching Python concepts step by step:
   - Function calls → Sequential execution → For loops → If conditions → Nested loops → User-defined functions → While loops → Market trading → Pest control → Seasons → Data analysis → Dictionaries → List operations → Algorithm optimization
-- ⭐ **XP & Level system** — 10 levels from "Seed Planter" to "Cyber Legend"
-- 🏆 **21 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Season Surfer, Market Whale, Pest Free, Winter Survivor, and more)
-- 💡 **Hint system** with "Load into Editor" for guided learning
+- **XP & Level system** — 10 levels from "Seed Planter" to "Code Legend"
+- **21 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Season Surfer, Market Whale, Pest Free, Winter Survivor, and more)
+- **Hint system** with "Load into Editor" for guided learning
 
 ### User Accounts & Premium
-- 👤 **Registration & Login** — create an account to save progress to the cloud
-- ☁️ **Cloud save** — game state syncs to server so you can continue on any device
-- 🔒 **Secure authentication** — SHA-256 password hashing with per-user salts
-- ⭐ **Premium upgrade** — first 5 missions free, unlock all 25 with one-time $9.90 payment
-- 💳 **Stripe payment** — secure credit card checkout via Stripe
+- **Registration & Login** — create an account to save progress to the cloud
+- **Cloud save** — game state syncs to server so you can continue on any device
+- **Secure authentication** — SHA-256 password hashing with per-user salts
+- **Premium upgrade** — first 5 missions free, unlock all 25 with one-time $9.90 payment
+- **Stripe payment** — secure credit card checkout via Stripe
 
 ### Python Features Supported
 - Variables, assignment, augmented assignment (`+=`, `-=`, etc.)
 - `for` loops with `range()`, `while` loops
 - `if`/`elif`/`else` conditionals
 - User-defined functions with `def`, parameters, and `return`
-- F-strings, list/tuple literals, subscript indexing
+- F-strings, list/tuple literals, subscript indexing and slicing
 - Dictionaries and dictionary methods
-- Boolean/comparison/arithmetic operators
+- Boolean/comparison/arithmetic operators (`in`, `not in` included)
 - String and list methods (`.keys()`, `.values()`, `.items()`, `.get()`, `.upper()`, `.lower()`, `.append()`, `.sort()`, etc.)
-- Built-in functions: `print`, `len`, `str`, `int`, `float`, `bool`, `abs`, `max`, `min`, `round`, `type`, `range`
+- Tuple unpacking in assignments and for-loops
+- Built-in functions: `print`, `len`, `str`, `int`, `float`, `bool`, `abs`, `max`, `min`, `round`, `type`, `range`, `enumerate`, `sorted`, `list`, `sum`
 
 ### UI & Experience
-- 🌙 **Dark mode** with toggle
-- 🌐 **Multilingual** — English, 简体中文, Deutsch, Français
-- 💾 **Game state persistence** — progress saves to localStorage and restores on reload
-- ☁️ **Cloud save** — optional server-side persistence with user accounts
-- 🖥 **Visual feedback**: crop growth stages (seedling → sprout → mature), harvest particle effects, floating gold animations, pest indicators
-- 📖 **Crop Encyclopedia** with stats, ROI, and profit info
-- 💹 **Market panel** with real-time price display and trend indicators
-- ⌨️ **Monaco Editor** with Python autocomplete and syntax highlighting
-- 🔔 **Toast notifications** for mission completions, achievements, and level-ups
-- 🔄 **Auto-reconnect** — WebSocket automatically reconnects on connection loss
+- **Dark mode** with toggle
+- **Multilingual** — English, 简体中文, Deutsch, Français
+- **Game state persistence** — progress saves to localStorage and restores on reload
+- **Cloud save** — optional server-side persistence with user accounts
+- **Visual feedback**: crop growth stages (seedling → sprout → mature), harvest particle effects, floating gold animations, pest indicators
+- **Crop Encyclopedia** with stats, ROI, and profit info
+- **Market panel** with real-time price display and trend indicators
+- **Monaco Editor** with Python autocomplete and syntax highlighting
+- **Toast notifications** for mission completions, achievements, and level-ups
+- **Auto-reconnect** — WebSocket automatically reconnects on connection loss
 
 ---
 
@@ -235,8 +238,8 @@ Scripts can be executed:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/bowardzhang/cyber-farm.git
-cd cyber-farm
+git clone https://github.com/bowardzhang/codeharv.git
+cd codeharv
 ```
 
 ### 2. Install dependencies
@@ -265,14 +268,14 @@ http://localhost:8080
 
 ## 🎯 Project Goal
 
-Cyber Farm is designed for:
+Code Harv is designed for:
 
-- 🧑‍🎓 **Beginners learning Python** — zero to hero through guided missions
-- 👨‍🏫 **Programming education** — teaching demos and classroom use
-- 🧪 **Experimenting with automation logic** — optimize your farm for max ROI
-- 🎮 **Learning through play** — gamification makes coding fun
+- **Beginners learning Python** — zero to hero through guided missions
+- **Programming education** — teaching demos and classroom use
+- **Experimenting with automation logic** — optimize your farm for max ROI
+- **Learning through play** — gamification makes coding fun
 
-The long-term vision is to evolve Cyber Farm into a code-driven sandbox game where logic, optimization, and strategy matter more than clicks.
+The long-term vision is to evolve Code Harv into a code-driven sandbox game where logic, optimization, and strategy matter more than clicks.
 
 ---
 
@@ -294,6 +297,8 @@ The long-term vision is to evolve Cyber Farm into a code-driven sandbox game whe
 - [x] WebSocket auto-reconnection
 - [x] Premium subscription with Stripe payment ($9.90)
 - [x] Mission paywall (5 free, 20 premium)
+- [x] Tuple unpacking, `in`/`not in` operators, list slicing
+- [x] `enumerate()`, `sorted()`, `list()`, `sum()` builtins
 - [ ] More advanced Python features (classes, imports)
 - [ ] Script challenges and puzzles with leaderboards
 - [ ] Multiplayer / farm visiting

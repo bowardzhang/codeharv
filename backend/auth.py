@@ -5,7 +5,7 @@ import secrets
 import os
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "cyberfarm.db"
+DB_PATH = Path(__file__).parent / "codeharv.db"
 
 def get_db():
     """Get SQLite connection with row factory."""

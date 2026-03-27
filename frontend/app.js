@@ -9,7 +9,7 @@ window.__monaco = monaco;
 
 // I18N, MISSION_I18N, ACHIEVEMENT_I18N, FREE_MISSION_COUNT are defined in i18n.js
 
-let currentLang = localStorage.getItem("cyberfarm_lang") || "en";
+let currentLang = localStorage.getItem("codeharv_lang") || "en";
 
 function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
@@ -47,7 +47,7 @@ async function checkPremiumStatus() {
    Editor
 ============================================================ */
 
-const DEFAULT_CODE = `# Welcome to Cyber Farm!
+const DEFAULT_CODE = `# Welcome to Code Harv!
 # Complete missions to learn Python step by step.
 # Mission 1: Plant your first crop!
 
@@ -705,8 +705,8 @@ const authLogoutArea = document.getElementById("authLogoutArea");
 const authLogoutBtn = document.getElementById("authLogoutBtn");
 const authCurrentUser = document.getElementById("authCurrentUser");
 
-let authToken = localStorage.getItem("cyberfarm_token") || null;
-let currentUsername = localStorage.getItem("cyberfarm_username") || null;
+let authToken = localStorage.getItem("codeharv_token") || null;
+let currentUsername = localStorage.getItem("codeharv_username") || null;
 
 function updateAuthUI() {
   if (authToken && currentUsername) {
@@ -751,8 +751,8 @@ async function doAuth(action) {
     if (data.success) {
       authToken = data.token;
       currentUsername = data.username;
-      localStorage.setItem("cyberfarm_token", authToken);
-      localStorage.setItem("cyberfarm_username", currentUsername);
+      localStorage.setItem("codeharv_token", authToken);
+      localStorage.setItem("codeharv_username", currentUsername);
       updateAuthUI();
       authModal.classList.add("hidden");
       showToastNotification(
@@ -830,8 +830,8 @@ if (authLogoutBtn) {
     authToken = null;
     currentUsername = null;
     isPremium = false;
-    localStorage.removeItem("cyberfarm_token");
-    localStorage.removeItem("cyberfarm_username");
+    localStorage.removeItem("codeharv_token");
+    localStorage.removeItem("codeharv_username");
     updateAuthUI();
     authModal.classList.add("hidden");
     showToastNotification("👤 " + t("logout"), "", "toast-mission");
@@ -1067,7 +1067,7 @@ function connectWebSocket() {
   ws.onopen = () => {
     log(t("connected"));
     // Try to restore saved game state
-    const saved = localStorage.getItem("cyberfarm_save");
+    const saved = localStorage.getItem("codeharv_save");
     if (saved) {
       try {
         ws.send(JSON.stringify({ type: "restore", save: JSON.parse(saved) }));
@@ -1157,7 +1157,7 @@ async function wsOnMessage(e) {
 
     // Save game progress
     if (msg.farm && msg.farm.save) {
-      localStorage.setItem("cyberfarm_save", JSON.stringify(msg.farm.save));
+      localStorage.setItem("codeharv_save", JSON.stringify(msg.farm.save));
     }
 
     // Track market prices
@@ -1246,7 +1246,7 @@ async function wsOnMessage(e) {
 
       // Save game progress
       if (msg.farm.save) {
-        localStorage.setItem("cyberfarm_save", JSON.stringify(msg.farm.save));
+        localStorage.setItem("codeharv_save", JSON.stringify(msg.farm.save));
         saveCloudProgress(msg.farm.save);
       }
     }
@@ -1514,7 +1514,7 @@ document.addEventListener("keydown", (e) => {
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
       wo.classList.add("hidden");
-      localStorage.setItem("cyberfarm_welcomed", "1");
+      localStorage.setItem("codeharv_welcomed", "1");
     }
   }
 });
@@ -1559,13 +1559,13 @@ const welcomeOverlay = document.getElementById("welcomeOverlay");
 const welcomeStartBtn = document.getElementById("welcomeStartBtn");
 
 // Show welcome only on first visit
-if (localStorage.getItem("cyberfarm_welcomed")) {
+if (localStorage.getItem("codeharv_welcomed")) {
   welcomeOverlay.classList.add("hidden");
 }
 
 welcomeStartBtn.addEventListener("click", () => {
   welcomeOverlay.classList.add("hidden");
-  localStorage.setItem("cyberfarm_welcomed", "1");
+  localStorage.setItem("codeharv_welcomed", "1");
 });
 
 /* ============================================================
@@ -1573,14 +1573,14 @@ welcomeStartBtn.addEventListener("click", () => {
 ============================================================ */
 
 const darkModeBtn = document.getElementById("darkModeBtn");
-let isDarkMode = localStorage.getItem("cyberfarm_dark") === "1";
+let isDarkMode = localStorage.getItem("codeharv_dark") === "1";
 
 function applyDarkMode() {
   document.body.classList.toggle("dark-mode", isDarkMode);
   darkModeBtn.textContent = isDarkMode ? "\u2600\ufe0f" : "\uD83C\uDF19";
   // Switch Monaco editor theme
   monaco.editor.setTheme(isDarkMode ? "vs-dark" : "vs");
-  localStorage.setItem("cyberfarm_dark", isDarkMode ? "1" : "0");
+  localStorage.setItem("codeharv_dark", isDarkMode ? "1" : "0");
 }
 
 darkModeBtn.onclick = () => {
@@ -1599,7 +1599,7 @@ const langSelect = document.getElementById("langSelect");
 langSelect.value = currentLang;
 langSelect.addEventListener("change", () => {
   currentLang = langSelect.value;
-  localStorage.setItem("cyberfarm_lang", currentLang);
+  localStorage.setItem("codeharv_lang", currentLang);
   applyLanguage();
 });
 
@@ -1762,7 +1762,7 @@ function generateShareImage() {
   ctx.fillStyle = "#22c55e";
   ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("🌱 Cyber Farm", w / 2, 45);
+  ctx.fillText("🌱 Code Harv", w / 2, 45);
 
   // Stats bar at bottom
   const farm = currentFarm || {};
@@ -1792,7 +1792,7 @@ function generateShareImage() {
   ctx.fillStyle = "rgba(255,255,255,0.15)";
   ctx.font = "11px system-ui, sans-serif";
   ctx.textAlign = "right";
-  ctx.fillText("cyberfarm.app", w - 16, h - 10);
+  ctx.fillText("codeharv.com", w - 16, h - 10);
 }
 
 function getShareText() {
@@ -1800,11 +1800,11 @@ function getShareText() {
   const gold = farm.gold ?? 0;
   const level = farm.level ?? 1;
   const completedMissions = currentMissions ? currentMissions.filter(m => m.completed).length : 0;
-  return `🌱 I'm farming with Python on Cyber Farm! Level ${level}, ${gold} gold, ${completedMissions} missions completed. Learn Python by growing a virtual farm!`;
+  return `🌱 I'm farming with Python on Code Harv! Level ${level}, ${gold} gold, ${completedMissions} missions completed. Learn Python by growing a virtual farm!`;
 }
 
 function getShareUrl() {
-  return "https://github.com/bowardzhang/cyber-farm";
+  return "https://codeharv.com";
 }
 
 if (shareBtn) {
@@ -1838,7 +1838,7 @@ document.getElementById("shareFacebook")?.addEventListener("click", () => {
 document.getElementById("shareWeChat")?.addEventListener("click", () => {
   // Download the image so user can share it in WeChat
   const link = document.createElement("a");
-  link.download = "cyberfarm-share.png";
+  link.download = "codeharv-share.png";
   link.href = shareCanvas.toDataURL("image/png");
   link.click();
   showToastNotification("💬 WeChat", t("share_wechat_hint") || "Image saved! Share it in WeChat.", "toast-mission");
@@ -1853,7 +1853,7 @@ document.getElementById("shareWhatsApp")?.addEventListener("click", () => {
 // Download image
 document.getElementById("shareDownload")?.addEventListener("click", () => {
   const link = document.createElement("a");
-  link.download = "cyberfarm-share.png";
+  link.download = "codeharv-share.png";
   link.href = shareCanvas.toDataURL("image/png");
   link.click();
 });

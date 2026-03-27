@@ -127,7 +127,7 @@ LEVELS = [
     {"level": 7,  "xp_needed": 1200, "title": "Python Farmer"},
     {"level": 8,  "xp_needed": 1800, "title": "Code Wizard"},
     {"level": 9,  "xp_needed": 2500, "title": "Farm Tycoon"},
-    {"level": 10, "xp_needed": 3500, "title": "Cyber Legend"},
+    {"level": 10, "xp_needed": 3500, "title": "Code Legend"},
 ]
 
 # ---------- Achievements ----------

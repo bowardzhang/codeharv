@@ -20,6 +20,11 @@ class _ContinueSignal(Exception):
     """Internal signal for continue statement."""
     pass
 
+class _ReturnSignal(Exception):
+    """Internal signal for return statement inside user functions."""
+    def __init__(self, value=None):
+        self.value = value
+
 class Executor:
     MAX_STEPS = 500
     MAX_TIMEOUT = 1800
@@ -211,17 +216,20 @@ class Executor:
                 self.ctx[pname] = pval
             # Execute body statements
             result = None
-            for stmt in body:
-                if isinstance(stmt, ast.Return):
-                    result = self.eval(stmt.value) if stmt.value else None
-                    break
-                self.steps += 1
-                if self.steps > self.MAX_STEPS:
-                    raise ScriptError(node, "Script exceeded maximum execution steps")
-                self.farm.tick(self.TIME_PER_STEP)
-                ev = self._step_one(stmt)
-                if ev is not None:
-                    result = ev
+            try:
+                for stmt in body:
+                    if isinstance(stmt, ast.Return):
+                        result = self.eval(stmt.value) if stmt.value else None
+                        break
+                    self.steps += 1
+                    if self.steps > self.MAX_STEPS:
+                        raise ScriptError(node, "Script exceeded maximum execution steps")
+                    self.farm.tick(self.TIME_PER_STEP)
+                    ev = self._step_one(stmt)
+                    if ev is not None:
+                        result = ev
+            except _ReturnSignal as rs:
+                result = rs.value
             # Restore context (but keep any new variables from outer scope)
             for pname in param_names:
                 if pname in saved:
@@ -290,6 +298,9 @@ class Executor:
         if isinstance(node, ast.Continue):
             raise _ContinueSignal()
 
+        if isinstance(node, ast.Return):
+            raise _ReturnSignal(self.eval(node.value) if node.value else None)
+
         if isinstance(node, ast.FunctionDef):
             self._define_function(node)
             return None
@@ -306,9 +317,9 @@ class Executor:
             args = [self.eval(a) for a in node.args]
             SAFE_METHODS = {
                 'keys', 'values', 'items', 'get',
-                'upper', 'lower', 'strip', 'split', 'join', 'replace',
-                'startswith', 'endswith', 'count', 'index',
-                'append', 'pop', 'sort', 'reverse', 'copy',
+                'upper', 'lower', 'strip', 'split', 'join', 'replace', 'format',
+                'startswith', 'endswith', 'count', 'index', 'find', 'rfind',
+                'append', 'pop', 'sort', 'reverse', 'copy', 'extend', 'insert', 'remove',
             }
             if method_name in SAFE_METHODS:
                 method = getattr(obj, method_name, None)
@@ -410,6 +421,29 @@ class Executor:
                 except TypeError as e:
                     raise ScriptError(node, str(e))
             raise ScriptError(node, "list() takes 0 or 1 arguments")
+        elif func == "dict":
+            kwargs = {}
+            for kw in (node.keywords or []):
+                kwargs[kw.arg] = self.eval(kw.value)
+            if args and kwargs:
+                raise ScriptError(node, "dict() takes either positional or keyword arguments, not both")
+            if args:
+                if len(args) != 1:
+                    raise ScriptError(node, "dict() takes at most 1 positional argument")
+                try:
+                    return dict(args[0])
+                except (TypeError, ValueError) as e:
+                    raise ScriptError(node, str(e))
+            return dict(**kwargs) if kwargs else {}
+        elif func == "tuple":
+            if len(args) == 0:
+                return ()
+            if len(args) == 1:
+                try:
+                    return tuple(args[0])
+                except TypeError as e:
+                    raise ScriptError(node, str(e))
+            raise ScriptError(node, "tuple() takes 0 or 1 arguments")
         elif func == "sum":
             if not args or len(args) > 2:
                 raise ScriptError(node, "sum() takes 1 or 2 arguments")
@@ -544,6 +578,31 @@ class Executor:
                     except TypeError as e:
                         raise ScriptError(node, str(e))
                 raise ScriptError(node, "list() takes 0 or 1 arguments")
+            if func_name == "dict":
+                args = [self.eval(a) for a in node.args]
+                kwargs = {}
+                for kw in (node.keywords or []):
+                    kwargs[kw.arg] = self.eval(kw.value)
+                if args and kwargs:
+                    raise ScriptError(node, "dict() takes either positional or keyword arguments, not both")
+                if args:
+                    if len(args) != 1:
+                        raise ScriptError(node, "dict() takes at most 1 positional argument")
+                    try:
+                        return dict(args[0])
+                    except (TypeError, ValueError) as e:
+                        raise ScriptError(node, str(e))
+                return dict(**kwargs) if kwargs else {}
+            if func_name == "tuple":
+                args = [self.eval(a) for a in node.args]
+                if len(args) == 0:
+                    return ()
+                if len(args) == 1:
+                    try:
+                        return tuple(args[0])
+                    except TypeError as e:
+                        raise ScriptError(node, str(e))
+                raise ScriptError(node, "tuple() takes 0 or 1 arguments")
             if func_name == "sum":
                 args = [self.eval(a) for a in node.args]
                 if not args or len(args) > 2:
@@ -568,9 +627,9 @@ class Executor:
             args = [self.eval(a) for a in node.args]
             SAFE_METHODS = {
                 'keys', 'values', 'items', 'get',
-                'upper', 'lower', 'strip', 'split', 'join', 'replace',
-                'startswith', 'endswith', 'count', 'index',
-                'append', 'pop', 'sort', 'reverse', 'copy',
+                'upper', 'lower', 'strip', 'split', 'join', 'replace', 'format',
+                'startswith', 'endswith', 'count', 'index', 'find', 'rfind',
+                'append', 'pop', 'sort', 'reverse', 'copy', 'extend', 'insert', 'remove',
             }
             if method_name in SAFE_METHODS:
                 method = getattr(obj, method_name, None)

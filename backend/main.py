@@ -283,7 +283,7 @@ async def run_script(ws: WebSocket):
                 elif msg["type"] == "abort":
                     executor = None
                     stop_idle_ticker()
-                    await ws.send_json({"type": "done"})
+                    await ws.send_json({"type": "done", "farm": farm.snapshot()})
 
                 # ==============================
                 # RESTORE (client save data)

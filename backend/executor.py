@@ -12,6 +12,14 @@ class ScriptError(Exception):
             return f"Line {self.lineno}: {self.message}"
         return self.message
 
+class _BreakSignal(Exception):
+    """Internal signal for break statement."""
+    pass
+
+class _ContinueSignal(Exception):
+    """Internal signal for continue statement."""
+    pass
+
 class Executor:
     MAX_STEPS = 500
     MAX_TIMEOUT = 1800
@@ -44,6 +52,10 @@ class Executor:
             self._assign_target(target, value)
             return self.step()
 
+        # Handle loop sentinels (reached naturally = loop iteration boundary)
+        if isinstance(node, tuple) and node[0] in ("_loop_end", "_loop_iter"):
+            return self.step()
+
         if self.start_time and time.time() - self.start_time > self.MAX_TIMEOUT:
             raise ScriptError(node, "Script timeout")
 
@@ -66,7 +78,11 @@ class Executor:
             iterable = self.eval(node.iter)
             target = node.target
 
+            # Push loop-end sentinel first (bottom of stack for this loop)
+            self.stack.append(("_loop_end",))
             for value in reversed(iterable):
+                # Push iteration separator sentinel
+                self.stack.append(("_loop_iter",))
                 for stmt in reversed(node.body):
                     self.stack.append(stmt)
                 # Support tuple unpacking: for x, y in ...
@@ -95,6 +111,29 @@ class Executor:
         # pass (no-op)
         if isinstance(node, ast.Pass):
             return self.step()
+
+        # break statement - pop stack until loop-end sentinel
+        if isinstance(node, ast.Break):
+            while self.stack:
+                top = self.stack.pop()
+                if isinstance(top, tuple) and top[0] == "_loop_end":
+                    break
+            return self.step()
+
+        # continue statement - pop stack until loop-iter sentinel
+        if isinstance(node, ast.Continue):
+            while self.stack:
+                top = self.stack.pop()
+                if isinstance(top, tuple) and top[0] == "_loop_iter":
+                    break
+                if isinstance(top, tuple) and top[0] == "_loop_end":
+                    # Continue at end of loop means just exit
+                    break
+            return self.step()
+
+        # return at top level is an error
+        if isinstance(node, ast.Return):
+            raise ScriptError(node, "'return' outside function")
 
         # user-defined function
         if isinstance(node, ast.FunctionDef):
@@ -137,15 +176,20 @@ class Executor:
                 break
             iterations += 1
             # Execute body statements sequentially inline
-            for stmt in node.body:
-                self.steps += 1
-                if self.steps > self.MAX_STEPS:
-                    raise ScriptError(node, "Script exceeded maximum execution steps")
-                self.farm.tick(self.TIME_PER_STEP)
+            try:
+                for stmt in node.body:
+                    self.steps += 1
+                    if self.steps > self.MAX_STEPS:
+                        raise ScriptError(node, "Script exceeded maximum execution steps")
+                    self.farm.tick(self.TIME_PER_STEP)
 
-                ev = self._step_one(stmt)
-                if ev is not None:
-                    last_ev = ev
+                    ev = self._step_one(stmt)
+                    if ev is not None:
+                        last_ev = ev
+            except _BreakSignal:
+                break
+            except _ContinueSignal:
+                continue
         else:
             raise ScriptError(node, f"While loop exceeded {self.MAX_WHILE_ITERATIONS} iterations")
 
@@ -206,14 +250,19 @@ class Executor:
             last_ev = None
             for value in iterable:
                 self._assign_target(target, value)
-                for stmt in node.body:
-                    self.steps += 1
-                    if self.steps > self.MAX_STEPS:
-                        raise ScriptError(node, "Script exceeded maximum execution steps")
-                    self.farm.tick(self.TIME_PER_STEP)
-                    ev = self._step_one(stmt)
-                    if ev is not None:
-                        last_ev = ev
+                try:
+                    for stmt in node.body:
+                        self.steps += 1
+                        if self.steps > self.MAX_STEPS:
+                            raise ScriptError(node, "Script exceeded maximum execution steps")
+                        self.farm.tick(self.TIME_PER_STEP)
+                        ev = self._step_one(stmt)
+                        if ev is not None:
+                            last_ev = ev
+                except _BreakSignal:
+                    break
+                except _ContinueSignal:
+                    continue
             return last_ev
 
         if isinstance(node, ast.While):
@@ -234,6 +283,12 @@ class Executor:
 
         if isinstance(node, ast.Pass):
             return None
+
+        if isinstance(node, ast.Break):
+            raise _BreakSignal()
+
+        if isinstance(node, ast.Continue):
+            raise _ContinueSignal()
 
         if isinstance(node, ast.FunctionDef):
             self._define_function(node)

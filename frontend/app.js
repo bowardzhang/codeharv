@@ -119,7 +119,16 @@ monaco.languages.registerCompletionItemProvider('python', {
       { label: 'has_pest', kind: monaco.languages.CompletionItemKind.Function, insertText: 'has_pest(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Check if cell has a pest' },
       { label: 'remove_pest', kind: monaco.languages.CompletionItemKind.Function, insertText: 'remove_pest(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Remove pest at (x,y) - costs 5 gold' },
       { label: 'get_pests', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_pests()', insertTextRules: 4, documentation: 'Get list of all pests' },
-      { label: 'get_status', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_status(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Get detailed status of cell (x,y)' },
+      { label: 'range', kind: monaco.languages.CompletionItemKind.Function, insertText: 'range(${1:n})', insertTextRules: 4, documentation: 'Generate a range of numbers' },
+      { label: 'len', kind: monaco.languages.CompletionItemKind.Function, insertText: 'len(${1:obj})', insertTextRules: 4, documentation: 'Get length of a list or string' },
+      { label: 'enumerate', kind: monaco.languages.CompletionItemKind.Function, insertText: 'enumerate(${1:iterable})', insertTextRules: 4, documentation: 'Get index-value pairs from iterable' },
+      { label: 'sorted', kind: monaco.languages.CompletionItemKind.Function, insertText: 'sorted(${1:iterable})', insertTextRules: 4, documentation: 'Return a sorted list' },
+      { label: 'list', kind: monaco.languages.CompletionItemKind.Function, insertText: 'list(${1:iterable})', insertTextRules: 4, documentation: 'Convert to list' },
+      { label: 'sum', kind: monaco.languages.CompletionItemKind.Function, insertText: 'sum(${1:iterable})', insertTextRules: 4, documentation: 'Sum all values in iterable' },
+      { label: 'abs', kind: monaco.languages.CompletionItemKind.Function, insertText: 'abs(${1:value})', insertTextRules: 4, documentation: 'Get absolute value' },
+      { label: 'max', kind: monaco.languages.CompletionItemKind.Function, insertText: 'max(${1:args})', insertTextRules: 4, documentation: 'Get maximum value' },
+      { label: 'min', kind: monaco.languages.CompletionItemKind.Function, insertText: 'min(${1:args})', insertTextRules: 4, documentation: 'Get minimum value' },
+      { label: 'round', kind: monaco.languages.CompletionItemKind.Function, insertText: 'round(${1:number})', insertTextRules: 4, documentation: 'Round a number' },
     ]
   })
 });
@@ -542,6 +551,10 @@ hintBtn.addEventListener("click", () => {
 document.getElementById("loadHintBtn").onclick = function() {
   const active = currentMissions.find(m => m.active && !m.completed);
   if (active && active.hint) {
+    const currentCode = editor.getValue().trim();
+    if (currentCode && !confirm(t("confirm_load_hint") || "This will replace your current code. Continue?")) {
+      return;
+    }
     editor.setValue(active.hint);
     log(t("loaded_hint"));
   } else {

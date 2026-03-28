@@ -1494,11 +1494,18 @@ canvas.addEventListener("mouseleave", () => {
 });
 
 /* ============================================================
-   About Panel
+   Settings Panel
 ============================================================ */
 
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsPanel = document.getElementById("settingsPanel");
 const aboutBtn = document.getElementById("aboutBtn");
 const aboutPanel = document.getElementById("aboutPanel");
+
+settingsBtn.onclick = (e) => {
+  e.stopPropagation();
+  settingsPanel.classList.toggle("hidden");
+};
 
 aboutBtn.onclick = (e) => {
   e.stopPropagation();
@@ -1506,7 +1513,13 @@ aboutBtn.onclick = (e) => {
 };
 
 document.addEventListener("click", () => {
+  settingsPanel.classList.add("hidden");
   aboutPanel.classList.add("hidden");
+});
+
+// Prevent clicks inside settings panel from closing it
+settingsPanel.addEventListener("click", (e) => {
+  e.stopPropagation();
 });
 
 /* ============================================================
@@ -1523,6 +1536,8 @@ document.addEventListener("keydown", (e) => {
     if (missionsModal) missionsModal.classList.add("hidden");
     if (shareModal) shareModal.classList.add("hidden");
     if (premiumModal) premiumModal.classList.add("hidden");
+    if (settingsPanel) settingsPanel.classList.add("hidden");
+    if (aboutPanel) aboutPanel.classList.add("hidden");
     hideGridMenus();
     const wo = document.getElementById("welcomeOverlay");
     if (wo) {
@@ -1590,7 +1605,7 @@ let isDarkMode = localStorage.getItem("codeharv_dark") === "1";
 
 function applyDarkMode() {
   document.body.classList.toggle("dark-mode", isDarkMode);
-  darkModeBtn.textContent = isDarkMode ? "\u2600\ufe0f" : "\uD83C\uDF19";
+  darkModeBtn.textContent = isDarkMode ? "☀️ " + t("light_theme") : "🌙 " + t("dark_theme");
   // Switch Monaco editor theme
   monaco.editor.setTheme(isDarkMode ? "vs-dark" : "vs");
   localStorage.setItem("codeharv_dark", isDarkMode ? "1" : "0");
@@ -1651,7 +1666,11 @@ function applyLanguage() {
 
   // About button
   const aboutBtn = document.getElementById("aboutBtn");
-  if (aboutBtn) aboutBtn.textContent = t("about");
+  if (aboutBtn) aboutBtn.textContent = "ℹ️ " + t("about");
+
+  // Dark mode button text
+  const darkModeBtnEl = document.getElementById("darkModeBtn");
+  if (darkModeBtnEl) darkModeBtnEl.textContent = isDarkMode ? "☀️ " + t("light_theme") : "🌙 " + t("dark_theme");
 
   // Auth modal
   const authTitle = document.getElementById("authModalTitle");

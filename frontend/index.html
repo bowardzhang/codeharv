@@ -24,30 +24,45 @@
     <button id="cropBookBtn" title="Crop Encyclopedia">📖 Crops</button>
     <button id="achieveBtn" title="Achievements">🏆 Awards</button>
     <button id="marketBtn" title="Market Prices">💹 Market</button>
-    <div id="aboutWrapper">
-      <button id="aboutBtn">About</button>
-      <div id="aboutPanel" class="hidden">
-        <div class="about-content">
-          <b>Code Harv</b> <span style="font-size:11px;color:#94a3b8;">v2026.03.26</span><br>
-          Learn Python programming through a farming game 🌱<br><br>
-          <span class="icon">👤︎</span> Author: bowardzhang<br>
-          📧 bowardzhang[at]gmail[dot]com<br><br>
-          © 2026 Code Harv<br>All rights reserved.
+    <div id="settingsWrapper">
+      <button id="settingsBtn" title="Settings">⚙️</button>
+      <div id="settingsPanel" class="hidden">
+        <div id="authArea" class="settings-item">
+          <button id="loginBtn">👤 Login</button>
+          <span id="userDisplay" class="hidden" style="font-size:13px;color:#16a34a;font-weight:600;margin-left:8px;"></span>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-item">
+          <button id="darkModeBtn" title="Toggle Dark Mode">🌙 Dark Mode</button>
+        </div>
+        <div class="settings-item">
+          <button id="shareBtn" title="Share">📤 Share</button>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-item settings-lang-item">
+          <span class="settings-lang-label">🌐</span>
+          <select id="langSelect">
+            <option value="en">English</option>
+            <option value="zh">简体中文</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+          </select>
+        </div>
+        <div class="settings-divider"></div>
+        <div id="aboutWrapper" class="settings-item">
+          <button id="aboutBtn">ℹ️ About</button>
+        </div>
+        <div id="aboutPanel" class="hidden">
+          <div class="about-content">
+            <b>Code Harv</b> <span style="font-size:11px;color:#94a3b8;">v2026.03.26</span><br>
+            Learn Python programming through a farming game 🌱<br><br>
+            <span class="icon">👤︎</span> Author: bowardzhang<br>
+            📧 bowardzhang[at]gmail[dot]com<br><br>
+            © 2026 Code Harv<br>All rights reserved.
+          </div>
         </div>
       </div>
     </div>
-    <div id="authArea">
-      <button id="loginBtn">👤 Login</button>
-      <span id="userDisplay" class="hidden" style="font-size:13px;color:#16a34a;font-weight:600;margin-left:8px;"></span>
-    </div>
-    <button id="shareBtn" title="Share">📤 Share</button>
-    <button id="darkModeBtn" title="Toggle Dark Mode">🌙</button>
-    <select id="langSelect">
-      <option value="en">English</option>
-      <option value="zh">简体中文</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-    </select>
   </nav>
 </header>
 

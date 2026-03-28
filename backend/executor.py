@@ -385,8 +385,6 @@ class Executor:
             ev = self.farm.remove_pest(*args)
         elif func == "get_pests":
             return self.farm.get_pests()
-        elif func == "get_season":
-            return self.farm.get_season()
         elif func == "print":
             msg = " ".join(str(a) for a in args)
             self.farm.print_log.append(msg)

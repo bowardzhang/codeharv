@@ -110,7 +110,6 @@ monaco.languages.registerCompletionItemProvider('python', {
       { label: 'sell', kind: monaco.languages.CompletionItemKind.Function, insertText: 'sell(${1:x}, ${2:y})', insertTextRules: 4, documentation: 'Sell mature crop at market price' },
       { label: 'get_price', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_price("${1:crop}")', insertTextRules: 4, documentation: 'Get current market price for a crop' },
       { label: 'get_market', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_market()', insertTextRules: 4, documentation: 'Get all current market prices' },
-      { label: 'get_season', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_season()', insertTextRules: 4, documentation: 'Get current season' },
       { label: 'get_gold', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_gold()', insertTextRules: 4, documentation: 'Get current gold amount' },
       { label: 'get_time', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_time()', insertTextRules: 4, documentation: 'Get current farm time' },
       { label: 'get_all_mature', kind: monaco.languages.CompletionItemKind.Function, insertText: 'get_all_mature()', insertTextRules: 4, documentation: 'Get list of all mature crop positions' },
@@ -347,13 +346,138 @@ function drawBackground() {
   ctx.drawImage(bgImg, dx, dy, dw, dh);
 }
 
+/* ---------- Weather Canvas Overlay ---------- */
+let weatherParticles = [];
+let lastWeatherType = null;
+
+function initWeatherParticles(weather, cw, ch) {
+  weatherParticles = [];
+  if (weather === "rainy") {
+    for (let i = 0; i < 120; i++) {
+      weatherParticles.push({
+        x: Math.random() * cw,
+        y: Math.random() * ch,
+        speed: 4 + Math.random() * 4,
+        len: 10 + Math.random() * 15,
+      });
+    }
+  } else if (weather === "windy") {
+    for (let i = 0; i < 40; i++) {
+      weatherParticles.push({
+        x: Math.random() * cw,
+        y: Math.random() * ch,
+        speed: 2 + Math.random() * 3,
+        size: 3 + Math.random() * 5,
+        alpha: 0.15 + Math.random() * 0.25,
+      });
+    }
+  } else if (weather === "drought") {
+    for (let i = 0; i < 25; i++) {
+      weatherParticles.push({
+        x: Math.random() * cw,
+        y: ch * 0.6 + Math.random() * ch * 0.4,
+        speed: 0.3 + Math.random() * 0.6,
+        size: 20 + Math.random() * 40,
+        alpha: 0.08 + Math.random() * 0.12,
+      });
+    }
+  }
+}
+
+function drawWeatherOverlay(weather) {
+  if (!bgRect) return;
+  const cw = canvasCSSWidth;
+  const ch = canvasCSSHeight;
+
+  if (weather !== lastWeatherType) {
+    lastWeatherType = weather;
+    initWeatherParticles(weather, cw, ch);
+  }
+
+  ctx.save();
+
+  if (weather === "rainy") {
+    // Blue-grey tint
+    ctx.fillStyle = "rgba(80, 100, 140, 0.15)";
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h);
+    // Rain streaks
+    ctx.strokeStyle = "rgba(180, 210, 255, 0.4)";
+    ctx.lineWidth = 1.2;
+    for (const p of weatherParticles) {
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - 2, p.y + p.len);
+      ctx.stroke();
+      p.y += p.speed;
+      p.x -= 0.5;
+      if (p.y > ch) { p.y = -p.len; p.x = Math.random() * cw; }
+    }
+  } else if (weather === "cloudy") {
+    // Grey desaturation overlay
+    ctx.fillStyle = "rgba(120, 130, 140, 0.18)";
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h);
+    // Dim gradient from top
+    const grad = ctx.createLinearGradient(0, bgRect.y, 0, bgRect.y + bgRect.h * 0.4);
+    grad.addColorStop(0, "rgba(100, 110, 120, 0.20)");
+    grad.addColorStop(1, "rgba(100, 110, 120, 0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h * 0.4);
+  } else if (weather === "windy") {
+    // Slight cool tint
+    ctx.fillStyle = "rgba(180, 200, 220, 0.08)";
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h);
+    // Horizontal wind streaks
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1.5;
+    for (const p of weatherParticles) {
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x + p.size * 6, p.y - 1);
+      ctx.stroke();
+      p.x += p.speed;
+      if (p.x > cw + 30) { p.x = -40; p.y = Math.random() * ch; }
+    }
+    ctx.globalAlpha = 1;
+  } else if (weather === "drought") {
+    // Warm amber tint
+    ctx.fillStyle = "rgba(200, 150, 50, 0.15)";
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h);
+    // Heat shimmer / haze at bottom
+    for (const p of weatherParticles) {
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = "rgba(255, 220, 140, 0.15)";
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.size, p.size * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      p.x += p.speed;
+      p.y += Math.sin(p.x * 0.02) * 0.3;
+      if (p.x > cw + p.size) { p.x = -p.size; }
+    }
+    ctx.globalAlpha = 1;
+  } else if (weather === "sunny") {
+    // Warm golden glow from top-right
+    const grad = ctx.createRadialGradient(
+      bgRect.x + bgRect.w * 0.85, bgRect.y, 0,
+      bgRect.x + bgRect.w * 0.85, bgRect.y, bgRect.h * 0.6
+    );
+    grad.addColorStop(0, "rgba(255, 240, 180, 0.18)");
+    grad.addColorStop(0.5, "rgba(255, 230, 150, 0.06)");
+    grad.addColorStop(1, "rgba(255, 230, 150, 0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(bgRect.x, bgRect.y, bgRect.w, bgRect.h);
+  }
+
+  ctx.restore();
+}
+
 function drawScene(farm = EMPTY_FARM) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
+  drawWeatherOverlay(farm.weather || "sunny");
   updateFieldFromCanvas();
   updateResource(farm.gold ?? 0, farm.time ?? 0);
   updateWeatherDisplay(farm);
-  updateSeasonDisplay(farm);
 
   const grid = farm.grid ?? [];
   if (!grid.length) return;
@@ -433,14 +557,6 @@ function updateWeatherDisplay(farm) {
   weatherDisplay.textContent = `${farm.weather_info.emoji} ${name}`;
 }
 
-const seasonDisplay = document.getElementById("seasonDisplay");
-
-function updateSeasonDisplay(farm) {
-  if (!farm || !farm.season_info) return;
-  const key = "season_" + (farm.season || "spring");
-  const name = t(key) !== key ? t(key) : capitalize(farm.season || "spring");
-  seasonDisplay.textContent = `${farm.season_info.emoji} ${name}`;
-}
 
 function updateLevelDisplay(farm) {
   if (!farm || farm.level === undefined) return;
@@ -1081,7 +1197,7 @@ async function bootstrap() {
     updateLevelDisplay(data.farm);
     updateMissionPanel(data.farm.missions);
     updateAchievementsList(data.farm.achievements);
-    updateSeasonDisplay(data.farm);
+
     updatePestDisplay(data.farm);
   } catch(e) {
     // Fallback when backend is unavailable
@@ -1211,7 +1327,6 @@ async function wsOnMessage(e) {
     if (msg.farm.missions) updateMissionPanel(msg.farm.missions);
     if (msg.farm.achievements) updateAchievementsList(msg.farm.achievements);
     updateLevelDisplay(msg.farm);
-    updateSeasonDisplay(msg.farm);
     updatePestDisplay(msg.farm);
 
     // Save game progress
@@ -1300,7 +1415,6 @@ async function wsOnMessage(e) {
       if (msg.farm.missions) updateMissionPanel(msg.farm.missions);
       if (msg.farm.achievements) updateAchievementsList(msg.farm.achievements);
       updateLevelDisplay(msg.farm);
-      updateSeasonDisplay(msg.farm);
       updatePestDisplay(msg.farm);
 
       // Save game progress
@@ -1764,7 +1878,6 @@ function applyLanguage() {
       <code>sell(x, y)</code> - ${t("func_sell")}<br>
       <code>get_price("crop")</code> - ${t("func_get_price")}<br>
       <code>get_market()</code> - ${t("func_get_market")}<br>
-      <code>get_season()</code> - ${t("func_get_season")}<br>
       <code>get_gold()</code> - ${t("func_get_gold")}<br>
       <code>get_time()</code> - ${t("func_get_time")}<br>
       <code>get_all_mature()</code> - ${t("func_get_all_mature")}<br>
@@ -1787,9 +1900,8 @@ function applyLanguage() {
   if (currentMissions.length) updateMissionPanel(currentMissions);
   // Re-render achievements
   if (currentAchievements.length) renderAchievements();
-  // Re-render weather, season, level
+  // Re-render weather and level
   updateWeatherDisplay(currentFarm);
-  updateSeasonDisplay(currentFarm);
   updateLevelDisplay(currentFarm);
 }
 
@@ -1846,7 +1958,6 @@ function generateShareImage() {
   const farm = currentFarm || {};
   const gold = farm.gold ?? 0;
   const level = farm.level ?? 1;
-  const season = farm.season ?? "spring";
   const completedMissions = currentMissions ? currentMissions.filter(m => m.completed).length : 0;
   const totalMissions = currentMissions ? currentMissions.length : 25;
 
@@ -1857,7 +1968,7 @@ function generateShareImage() {
   ctx.fillStyle = "#94a3b8";
   ctx.font = "14px system-ui, -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(`💰 ${gold} Gold  |  ⭐ Level ${level}  |  🌸 ${season}  |  📋 ${completedMissions}/${totalMissions} Missions`, w / 2, statsY + 15);
+  ctx.fillText(`💰 ${gold} Gold  |  ⭐ Level ${level}  |  📋 ${completedMissions}/${totalMissions} Missions`, w / 2, statsY + 15);
 
   // Username if logged in
   if (currentUsername) {

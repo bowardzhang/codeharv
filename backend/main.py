@@ -300,10 +300,8 @@ async def run_script(ws: WebSocket):
                         farm.planted_crop_types = set(save.get("planted_crop_types", []))
                         farm.best_roi = save.get("best_roi", 0.0)
                         farm.active_mission_idx = save.get("active_mission_idx", 0)
-                        farm.experienced_seasons = set(save.get("experienced_seasons", []))
                         farm.pest_removed_count = save.get("pest_removed_count", 0)
                         farm.market_sell_gain = save.get("market_sell_gain", 0)
-                        farm.harvested_in_winter = save.get("harvested_in_winter", False)
                     await ws.send_json({
                         "type": "farm_state",
                         "farm": farm.snapshot()

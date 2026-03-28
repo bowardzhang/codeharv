@@ -18,18 +18,17 @@ Your code directly affects the farm — if your logic is good, your farm thrives
 - **Grid-based farming system** (6×6) with crops, growth, and resources
 - Actions: **plant, water, fertilize, wait, harvest, sell, clear**
 - **Time-based crop growth** with maturity simulation
-- **Dynamic weather system** — sunny, rainy, cloudy, windy, drought affect growth
-- **Season system** — spring, summer, autumn, winter cycle with seasonal growth modifiers
+- **Dynamic weather system** — sunny, rainy, cloudy, windy, drought affect growth with real-time canvas visual effects
 - **Market system** — dynamic crop prices that fluctuate over time; sell at market for profit
-- **Pest system** — bugs, weeds, and frost can appear on crops, slowing growth
+- **Pest system** — bugs and weeds can appear on crops, slowing growth
 - Script execution statistics (cost, gain, ROI)
 - **Sound effects** — audio feedback for planting, harvesting, level-ups, and errors
 
 ### Mission & Progression System
 - **25 progressive missions** teaching Python concepts step by step:
-  - Function calls → Sequential execution → For loops → If conditions → Nested loops → User-defined functions → While loops → Market trading → Pest control → Seasons → Data analysis → Dictionaries → List operations → Algorithm optimization
+  - Function calls → Sequential execution → For loops → If conditions → Nested loops → User-defined functions → While loops → Market trading → Pest control → Weather adaptation → Data analysis → Dictionaries → List operations → Algorithm optimization
 - **XP & Level system** — 10 levels from "Seed Planter" to "Code Legend"
-- **21 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Season Surfer, Market Whale, Pest Free, Winter Survivor, and more)
+- **19 achievements** to unlock (Green Thumb, Reaper, Investor, Speed Demon, Market Whale, Pest Free, and more)
 - **Hint system** with "Load into Editor" for guided learning
 
 ### User Accounts & Premium
@@ -162,20 +161,6 @@ for x in range(6):
         sell(x, 0)
 ```
 
-### Season-Aware Strategy
-```python
-season = get_season()
-crop = "wheat"
-if season == "spring":
-    crop = "strawberry"
-elif season == "summer":
-    crop = "sunflower"
-elif season == "autumn":
-    crop = "pumpkin"
-for x in range(6):
-    plant(crop, x, 0)
-    water(x, 0)
-```
 
 Scripts can be executed:
 - **Step-by-step** (manual mode) — learn what each line does
@@ -195,7 +180,6 @@ Scripts can be executed:
 | `wait(seconds)` | Advance farm time | Free |
 | `is_mature(x, y)` | Check if crop is ready | Free |
 | `get_weather()` | Get current weather | Free |
-| `get_season()` | Get current season | Free |
 | `get_status(x, y)` | Get crop status at position | Free |
 | `get_gold()` | Get current gold amount | Free |
 | `get_time()` | Get current farm time | Free |
@@ -281,10 +265,9 @@ The long-term vision is to evolve Code Harv into a code-driven sandbox game wher
 
 ## 🛣 Roadmap
 
-- [x] Weather and seasonal effects
-- [x] Season system (spring/summer/autumn/winter)
+- [x] Dynamic weather system with canvas visual effects
 - [x] Mission system with 25 progressive Python concepts
-- [x] XP, levels, and achievements (21 achievements)
+- [x] XP, levels, and achievements (19 achievements)
 - [x] Dark mode
 - [x] Bilingual support (EN/CN) → Multilingual (EN/ZH/DE/FR)
 - [x] Game state persistence (localStorage + cloud save)

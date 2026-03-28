@@ -406,7 +406,7 @@ async def api_create_checkout(req: CheckoutRequest):
             line_items=[{
                 "price_data": {
                     "currency": "usd",
-                    "product_data": {"name": "Code Harv Premium - Unlock All 25 Missions"},
+                    "product_data": {"name": "Code X Farm Premium - Unlock All 25 Missions"},
                     "unit_amount": 990,
                 },
                 "quantity": 1,

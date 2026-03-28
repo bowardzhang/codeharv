@@ -5,7 +5,7 @@ import secrets
 import os
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "codeharv.db"
+DB_PATH = Path(__file__).parent / "codexfarm.db"
 
 def get_db():
     """Get SQLite connection with row factory."""

@@ -9,51 +9,61 @@ CROPS = {
         "plant_cost": 1,
         "harvest_gain": 5,
         "grow_speed": 0.20,
+        "required_level": 1,
     },
     "wheat": {
         "plant_cost": 5,
         "harvest_gain": 10,
         "grow_speed": 0.12,
+        "required_level": 1,
     },
     "carrot": {
         "plant_cost": 7,
         "harvest_gain": 15,
         "grow_speed": 0.10,
+        "required_level": 2,
     },
     "cabbage": {
         "plant_cost": 8,
         "harvest_gain": 20,
         "grow_speed": 0.08,
+        "required_level": 3,
     },
     "strawberry": {
         "plant_cost": 10,
         "harvest_gain": 28,
         "grow_speed": 0.06,
+        "required_level": 4,
     },
     "eggplant": {
         "plant_cost": 9,
         "harvest_gain": 22,
         "grow_speed": 0.05,
+        "required_level": 5,
     },
     "tomato": {
         "plant_cost": 10,
         "harvest_gain": 18,
         "grow_speed": 0.10,
+        "required_level": 3,
     },
     "sunflower": {
         "plant_cost": 12,
         "harvest_gain": 30,
         "grow_speed": 0.07,
+        "required_level": 6,
     },
     "pumpkin": {
         "plant_cost": 15,
         "harvest_gain": 40,
         "grow_speed": 0.04,
+        "required_level": 7,
     },
     "golden_apple": {
         "plant_cost": 25,
         "harvest_gain": 60,
         "grow_speed": 0.03,
+        "required_level": 9,
     },
 }
 
@@ -167,6 +177,7 @@ MISSIONS = [
         "gold_reward": 50,
         "concept": "Function Calls",
         "check": "any_planted",
+        "required_level": 1,
     },
     {
         "id": "m2",
@@ -177,6 +188,7 @@ MISSIONS = [
         "gold_reward": 30,
         "concept": "Sequential Execution",
         "check": "any_watered",
+        "required_level": 1,
     },
     {
         "id": "m3",
@@ -187,6 +199,7 @@ MISSIONS = [
         "gold_reward": 50,
         "concept": "Complete Workflow",
         "check": "any_harvested",
+        "required_level": 1,
     },
     {
         "id": "m4",
@@ -197,6 +210,7 @@ MISSIONS = [
         "gold_reward": 80,
         "concept": "For Loops",
         "check": "row_planted",
+        "required_level": 2,
     },
     {
         "id": "m5",
@@ -207,6 +221,7 @@ MISSIONS = [
         "gold_reward": 80,
         "concept": "If Conditions",
         "check": None,
+        "required_level": 2,
     },
     {
         "id": "m6",
@@ -217,6 +232,7 @@ MISSIONS = [
         "gold_reward": 100,
         "concept": "Nested Loops",
         "check": "full_field",
+        "required_level": 3,
     },
     {
         "id": "m7",
@@ -227,6 +243,7 @@ MISSIONS = [
         "gold_reward": 100,
         "concept": "Optimization",
         "check": "positive_roi",
+        "required_level": 3,
     },
     {
         "id": "m8",
@@ -237,6 +254,7 @@ MISSIONS = [
         "gold_reward": 80,
         "concept": "String Arguments",
         "check": "crop_diversity",
+        "required_level": 4,
     },
     {
         "id": "m9",
@@ -247,6 +265,7 @@ MISSIONS = [
         "gold_reward": 60,
         "concept": "Variables & Return Values",
         "check": None,
+        "required_level": 4,
     },
     {
         "id": "m10",
@@ -257,6 +276,7 @@ MISSIONS = [
         "gold_reward": 150,
         "concept": "Combining Everything",
         "check": None,
+        "required_level": 4,
     },
     {
         "id": "m11",
@@ -267,6 +287,7 @@ MISSIONS = [
         "gold_reward": 120,
         "concept": "Defining Functions",
         "check": None,
+        "required_level": 5,
     },
     {
         "id": "m12",
@@ -277,6 +298,7 @@ MISSIONS = [
         "gold_reward": 130,
         "concept": "Loops & Counting",
         "check": "collector",
+        "required_level": 5,
     },
     {
         "id": "m13",
@@ -287,6 +309,7 @@ MISSIONS = [
         "gold_reward": 100,
         "concept": "Elif Chains",
         "check": None,
+        "required_level": 6,
     },
     {
         "id": "m14",
@@ -297,6 +320,7 @@ MISSIONS = [
         "gold_reward": 80,
         "concept": "Expressions & Output",
         "check": None,
+        "required_level": 6,
     },
     {
         "id": "m15",
@@ -307,6 +331,7 @@ MISSIONS = [
         "gold_reward": 200,
         "concept": "Complete Automation",
         "check": "master_automator",
+        "required_level": 6,
     },
     {
         "id": "m16",
@@ -317,6 +342,7 @@ MISSIONS = [
         "gold_reward": 90,
         "concept": "While Loops",
         "check": None,
+        "required_level": 7,
     },
     {
         "id": "m17",
@@ -327,6 +353,7 @@ MISSIONS = [
         "gold_reward": 100,
         "concept": "Return Values & Variables",
         "check": None,
+        "required_level": 7,
     },
     {
         "id": "m18",
@@ -337,6 +364,7 @@ MISSIONS = [
         "gold_reward": 90,
         "concept": "Boolean Logic",
         "check": None,
+        "required_level": 7,
     },
     {
         "id": "m19",
@@ -347,6 +375,7 @@ MISSIONS = [
         "gold_reward": 90,
         "concept": "String Comparison",
         "check": None,
+        "required_level": 8,
     },
     {
         "id": "m20",
@@ -357,6 +386,7 @@ MISSIONS = [
         "gold_reward": 100,
         "concept": "Lists & len()",
         "check": None,
+        "required_level": 8,
     },
     {
         "id": "m21",
@@ -367,6 +397,7 @@ MISSIONS = [
         "gold_reward": 110,
         "concept": "Dictionaries & Return Values",
         "check": None,
+        "required_level": 9,
     },
     {
         "id": "m22",
@@ -377,6 +408,7 @@ MISSIONS = [
         "gold_reward": 120,
         "concept": "While + Conditions",
         "check": None,
+        "required_level": 9,
     },
     {
         "id": "m23",
@@ -387,6 +419,7 @@ MISSIONS = [
         "gold_reward": 90,
         "concept": "Working with Lists",
         "check": None,
+        "required_level": 9,
     },
     {
         "id": "m24",
@@ -397,6 +430,7 @@ MISSIONS = [
         "gold_reward": 150,
         "concept": "Data Analysis",
         "check": None,
+        "required_level": 10,
     },
     {
         "id": "m25",
@@ -407,6 +441,7 @@ MISSIONS = [
         "gold_reward": 300,
         "concept": "Algorithm Optimization",
         "check": "roi_500",
+        "required_level": 10,
     },
 ]
 
@@ -481,6 +516,7 @@ class Farm:
             "background": BACKGROUND,
             "field_ratio": FIELD_RATIO,
             "exec_interval": EXEC_INTERVAL,
+            "crop_levels": {crop: cfg["required_level"] for crop, cfg in CROPS.items()},
         }
 
     # ---------- Cell ----------
@@ -744,6 +780,11 @@ class Farm:
                 self.active_mission_idx += 1
                 continue
 
+            # Level gate: cannot activate/complete missions above current level
+            req_lvl = mission.get("required_level", 1)
+            if self.level < req_lvl:
+                break
+
             completed = False
 
             if mission["check"] is not None:
@@ -856,6 +897,7 @@ class Farm:
                 "xp_reward": m["xp_reward"],
                 "gold_reward": m["gold_reward"],
                 "concept": m["concept"],
+                "required_level": m.get("required_level", 1),
                 "completed": m["id"] in self.completed_missions,
                 "active": i == self.active_mission_idx,
             })
@@ -917,6 +959,10 @@ class Farm:
         if crop not in CROPS:
             available = ", ".join(f'"{c}"' for c in CROPS)
             raise ValueError(f"Unknown crop: \"{crop}\". Available crops: {available}")
+
+        req_lvl = CROPS[crop].get("required_level", 1)
+        if self.level < req_lvl:
+            raise ValueError(f"\"{crop}\" requires level {req_lvl}. Your level: {self.level}")
 
         self._check_bounds(x, y)
         cell = self.grid[y][x]

@@ -488,6 +488,20 @@ canvas {
   background: #f0fdf4;
 }
 
+.crop-card.crop-locked {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.crop-card.crop-locked:hover {
+  border-color: #e2e8f0;
+  background: transparent;
+}
+
+.crop-tag-locked {
+  background: linear-gradient(135deg, #94a3b8, #64748b) !important;
+}
+
 .crop-emoji {
   font-size: 36px;
 }

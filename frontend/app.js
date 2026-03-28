@@ -502,6 +502,7 @@ function updateMissionPanel(missions) {
   const completedCount = missions.filter(m => m.completed).length;
   missionProgress.textContent = `${completedCount} / ${missions.length}`;
 
+  const playerLevel = (currentFarm && currentFarm.level) || 1;
   const active = missions.find(m => m.active && !m.completed);
 
   if (!active) {
@@ -512,22 +513,31 @@ function updateMissionPanel(missions) {
     return;
   }
 
-  // Check if this mission is premium-locked
+  // Check if this mission is premium-locked or level-locked
   const missionIdx = missions.indexOf(active);
-  const isLocked = missionIdx >= FREE_MISSION_COUNT && !isPremium;
+  const isPremiumLocked = missionIdx >= FREE_MISSION_COUNT && !isPremium;
+  const reqLevel = active.required_level || 1;
+  const isLevelLocked = playerLevel < reqLevel;
+  const isLocked = isPremiumLocked || isLevelLocked;
 
   const mId = active.id || "";
   missionTitle.textContent = tm(mId, "title") || active.title;
-  missionDesc.textContent = isLocked ? t("premium_required") : (tm(mId, "desc") || active.desc);
+  missionDesc.textContent = isLocked ? "" : (tm(mId, "desc") || active.desc);
   missionConcept.textContent = `🧠 ${tm(mId, "concept") || active.concept}`;
   missionReward.textContent = `${t("reward")}: +${active.xp_reward} XP, +${active.gold_reward} gold`;
 
-  if (isLocked) {
+  if (isLevelLocked) {
     missionHint.textContent = "";
     missionHint.classList.add("hidden");
     hintBtn.style.display = "none";
     document.getElementById("loadHintBtn").style.display = "none";
-    // Show upgrade prompt inside mission desc
+    missionDesc.innerHTML = `<span style="color:#ef4444;">🔒 ${t("requires_level")} ${reqLevel}</span><br>
+      <span style="font-size:12px;color:#64748b;">${t("level_up_hint")}</span>`;
+  } else if (isPremiumLocked) {
+    missionHint.textContent = "";
+    missionHint.classList.add("hidden");
+    hintBtn.style.display = "none";
+    document.getElementById("loadHintBtn").style.display = "none";
     missionDesc.innerHTML = `<span style="color:#d97706;">${t("premium_required")}</span><br>
       <button onclick="document.getElementById('premiumModal').classList.remove('hidden')"
         style="margin-top:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;">
@@ -572,38 +582,48 @@ const cropBookBtn = document.getElementById("cropBookBtn");
 const cropModalClose = document.getElementById("cropModalClose");
 
 const cropData = {
-  grass:        { emoji: "🌿", cost: 1,  gain: 5,  speed_key: "fast" },
-  wheat:        { emoji: "🌾", cost: 5,  gain: 10, speed_key: "medium" },
-  carrot:       { emoji: "🥕", cost: 7,  gain: 15, speed_key: "medium" },
-  cabbage:      { emoji: "🥬", cost: 8,  gain: 20, speed_key: "slow" },
-  strawberry:   { emoji: "🍓", cost: 10, gain: 28, speed_key: "slow" },
-  eggplant:     { emoji: "🍆", cost: 9,  gain: 22, speed_key: "very_slow" },
-  tomato:       { emoji: "🍅", cost: 10, gain: 18, speed_key: "medium" },
-  sunflower:    { emoji: "🌻", cost: 12, gain: 30, speed_key: "slow" },
-  pumpkin:      { emoji: "🎃", cost: 15, gain: 40, speed_key: "very_slow" },
-  golden_apple: { emoji: "🍎", cost: 25, gain: 60, speed_key: "very_slow" },
+  grass:        { emoji: "🌿", cost: 1,  gain: 5,  speed_key: "fast",      required_level: 1 },
+  wheat:        { emoji: "🌾", cost: 5,  gain: 10, speed_key: "medium",    required_level: 1 },
+  carrot:       { emoji: "🥕", cost: 7,  gain: 15, speed_key: "medium",    required_level: 2 },
+  cabbage:      { emoji: "🥬", cost: 8,  gain: 20, speed_key: "slow",      required_level: 3 },
+  strawberry:   { emoji: "🍓", cost: 10, gain: 28, speed_key: "slow",      required_level: 4 },
+  eggplant:     { emoji: "🍆", cost: 9,  gain: 22, speed_key: "very_slow", required_level: 5 },
+  tomato:       { emoji: "🍅", cost: 10, gain: 18, speed_key: "medium",    required_level: 3 },
+  sunflower:    { emoji: "🌻", cost: 12, gain: 30, speed_key: "slow",      required_level: 6 },
+  pumpkin:      { emoji: "🎃", cost: 15, gain: 40, speed_key: "very_slow", required_level: 7 },
+  golden_apple: { emoji: "🍎", cost: 25, gain: 60, speed_key: "very_slow", required_level: 9 },
 };
 
 function buildCropList() {
   cropList.innerHTML = "";
-  const newCrops = ["sunflower", "pumpkin", "golden_apple"];
+  const playerLevel = (currentFarm && currentFarm.level) || 1;
   for (const [name, info] of Object.entries(cropData)) {
     const profit = info.gain - info.cost;
     const roi = Math.round((profit / info.cost) * 100);
-    const isNew = newCrops.includes(name);
+    const isLocked = playerLevel < info.required_level;
     const card = document.createElement("div");
-    card.className = "crop-card";
-    card.innerHTML = `
-      <span class="crop-emoji">${info.emoji}</span>
-      <div class="crop-info">
-        <div class="crop-name">${name}${isNew ? ' <span class="crop-tag">NEW</span>' : ''}</div>
-        <div class="crop-stats">
-          ${t("cost")}: ${info.cost}g | ${t("gain")}: ${info.gain}g<br>
-          ${t("speed")}: ${t(info.speed_key)}<br>
-          <span class="crop-profit">${t("profit")}: +${profit}g (${roi}% ROI)</span>
+    card.className = "crop-card" + (isLocked ? " crop-locked" : "");
+    if (isLocked) {
+      card.innerHTML = `
+        <span class="crop-emoji" style="filter:grayscale(0.8);opacity:0.5;">${info.emoji}</span>
+        <div class="crop-info">
+          <div class="crop-name">${name} <span class="crop-tag crop-tag-locked">🔒 Lv.${info.required_level}</span></div>
+          <div class="crop-stats" style="color:#94a3b8;">${t("requires_level")} ${info.required_level}</div>
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      card.innerHTML = `
+        <span class="crop-emoji">${info.emoji}</span>
+        <div class="crop-info">
+          <div class="crop-name">${name}</div>
+          <div class="crop-stats">
+            ${t("cost")}: ${info.cost}g | ${t("gain")}: ${info.gain}g<br>
+            ${t("speed")}: ${t(info.speed_key)}<br>
+            <span class="crop-profit">${t("profit")}: +${profit}g (${roi}% ROI)</span>
+          </div>
+        </div>
+      `;
+    }
     cropList.appendChild(card);
   }
 }
@@ -874,26 +894,47 @@ const allMissionsBtn = document.getElementById("allMissionsBtn");
 function renderAllMissions() {
   if (!missionsListAll || !currentMissions.length) return;
   missionsListAll.innerHTML = "";
+  const playerLevel = (currentFarm && currentFarm.level) || 1;
   currentMissions.forEach((m, idx) => {
     const mId = m.id || "";
     const mTitle = tm(mId, "title") || m.title;
     const mDesc = tm(mId, "desc") || m.desc;
     const mConcept = tm(mId, "concept") || m.concept;
+    const reqLevel = m.required_level || 1;
     const isFree = idx < FREE_MISSION_COUNT;
-    const isLocked = !isFree && !isPremium;
-    const tag = isFree
-      ? `<span style="background:#22c55e;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("free_tag")}</span>`
-      : `<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("premium_tag")}</span>`;
-    const statusIcon = m.completed ? "✅" : (m.active ? "▶️" : (isLocked ? "🔒" : "⬜"));
+    const isPremiumLocked = !isFree && !isPremium;
+    const isLevelLocked = playerLevel < reqLevel;
+    const isLocked = isPremiumLocked || isLevelLocked;
+
+    // Build tags
+    let tags = "";
+    if (isFree) {
+      tags += `<span style="background:#22c55e;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("free_tag")}</span>`;
+    } else {
+      tags += `<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">${t("premium_tag")}</span>`;
+    }
+    if (reqLevel > 1) {
+      const lvlColor = isLevelLocked ? "#ef4444" : "#22c55e";
+      tags += ` <span style="background:${lvlColor};color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">Lv.${reqLevel}</span>`;
+    }
+
+    const statusIcon = m.completed ? "✅" : (m.active && !isLocked ? "▶️" : (isLocked ? "🔒" : "⬜"));
+    let descText = mDesc;
+    if (isPremiumLocked) {
+      descText = "🔒 " + t("premium_required");
+    } else if (isLevelLocked) {
+      descText = "🔒 " + t("requires_level") + " " + reqLevel;
+    }
+
     const div = document.createElement("div");
     div.style.cssText = `padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;gap:10px;${isLocked ? "opacity:0.65;" : ""}`;
     div.innerHTML = `
       <span style="font-size:16px;flex-shrink:0;margin-top:2px;">${statusIcon}</span>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
-          ${mTitle} ${tag}
+        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${mTitle} ${tags}
         </div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">${isLocked ? "🔒 " + t("premium_required") : mDesc}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">${descText}</div>
         <div style="font-size:11px;color:#94a3b8;margin-top:2px;">🧠 ${mConcept} | +${m.xp_reward} XP, +${m.gold_reward} gold</div>
       </div>
     `;
@@ -1026,21 +1067,26 @@ function sfxPest() { playTone(150, 0.2, "sawtooth", 0.06); }
 ============================================================ */
 
 async function bootstrap() {
-  const res = await fetch("/api/bootstrap");
-  const data = await res.json();
+  try {
+    const res = await fetch("/api/bootstrap");
+    const data = await res.json();
 
-  GRID = data.config.grid;
-  FIELD_RATIO = data.config.field_ratio;
-  bgImg.src = data.config.background;
-  EXEC_INTERVAL = data.config.exec_interval;
+    GRID = data.config.grid;
+    FIELD_RATIO = data.config.field_ratio;
+    bgImg.src = data.config.background;
+    EXEC_INTERVAL = data.config.exec_interval;
 
-  currentFarm = data.farm;
+    currentFarm = data.farm;
 
-  updateLevelDisplay(data.farm);
-  updateMissionPanel(data.farm.missions);
-  updateAchievementsList(data.farm.achievements);
-  updateSeasonDisplay(data.farm);
-  updatePestDisplay(data.farm);
+    updateLevelDisplay(data.farm);
+    updateMissionPanel(data.farm.missions);
+    updateAchievementsList(data.farm.achievements);
+    updateSeasonDisplay(data.farm);
+    updatePestDisplay(data.farm);
+  } catch(e) {
+    // Fallback when backend is unavailable
+    bgImg.src = "assets/farm_bg.webp";
+  }
 
   resizeCanvas();
 }
@@ -2168,13 +2214,22 @@ function insertActionCode(action, crop) {
 // Build crop picker buttons
 function buildCropPicker() {
   gridCropPicker.innerHTML = `<div class="grid-code-title">${t("gc_select_crop")}</div>`;
+  const playerLevel = (currentFarm && currentFarm.level) || 1;
   for (const [name, info] of Object.entries(cropData)) {
+    const isLocked = playerLevel < info.required_level;
     const btn = document.createElement("button");
-    btn.className = "crop-pick-item";
-    btn.innerHTML = `<span>${info.emoji}</span> <span>${name}</span> <span class="crop-pick-cost">${info.cost}g</span>`;
-    btn.addEventListener("click", () => {
-      insertActionCode("plant", name);
-    });
+    btn.className = "crop-pick-item" + (isLocked ? " crop-pick-locked" : "");
+    if (isLocked) {
+      btn.innerHTML = `<span style="filter:grayscale(0.8);opacity:0.5;">${info.emoji}</span> <span style="color:#94a3b8;">${name}</span> <span class="crop-pick-cost">🔒 Lv.${info.required_level}</span>`;
+      btn.disabled = true;
+      btn.style.cursor = "not-allowed";
+      btn.style.opacity = "0.55";
+    } else {
+      btn.innerHTML = `<span>${info.emoji}</span> <span>${name}</span> <span class="crop-pick-cost">${info.cost}g</span>`;
+      btn.addEventListener("click", () => {
+        insertActionCode("plant", name);
+      });
+    }
     gridCropPicker.appendChild(btn);
   }
 }

@@ -112,25 +112,41 @@ LEVELS = [
 
 # ---------- Achievements ----------
 ACHIEVEMENTS = [
-    {"id": "first_plant",  "title": "Green Thumb",   "desc": "Plant your first crop",         "emoji": "\U0001f331"},
-    {"id": "first_harvest","title": "Reaper",         "desc": "Harvest your first crop",       "emoji": "\U0001f33e"},
-    {"id": "gold_100",     "title": "Gold Digger",    "desc": "Accumulate 100 gold",           "emoji": "\U0001f4b0"},
-    {"id": "gold_1000",    "title": "Rich Farmer",    "desc": "Accumulate 1000 gold",          "emoji": "\U0001f3e6"},
-    {"id": "full_field",   "title": "Land Baron",     "desc": "Fill every cell with crops",    "emoji": "\U0001f3de\ufe0f"},
-    {"id": "roi_50",       "title": "Investor",       "desc": "Achieve 50% ROI",               "emoji": "\U0001f4c8"},
-    {"id": "roi_200",      "title": "Tycoon",         "desc": "Achieve 200% ROI",              "emoji": "\U0001f680"},
-    {"id": "level_5",      "title": "Halfway There",  "desc": "Reach level 5",                 "emoji": "\u2b50"},
-    {"id": "level_10",     "title": "Max Level",      "desc": "Reach level 10",                "emoji": "\U0001f451"},
-    {"id": "all_crops",    "title": "Botanist",       "desc": "Plant every type of crop",      "emoji": "\U0001f9ec"},
-    {"id": "missions_5",   "title": "Task Master",    "desc": "Complete 5 missions",           "emoji": "\U0001f4cb"},
-    {"id": "missions_all", "title": "Completionist",  "desc": "Complete all missions",         "emoji": "\U0001f3c6"},
-    {"id": "speed_demon",  "title": "Speed Demon",     "desc": "Complete a script in under 50 farm-time seconds", "emoji": "\u26a1"},
-    {"id": "diverse_farmer","title": "Diverse Farmer", "desc": "Plant all crop types including new ones", "emoji": "\U0001f308"},
-    {"id": "big_spender",  "title": "Big Spender",     "desc": "Spend 500+ gold in one script", "emoji": "\U0001f4b3"},
-    {"id": "market_whale", "title": "Market Whale",    "desc": "Earn 200+ gold from market sells in one script", "emoji": "\U0001f40b"},
-    {"id": "pest_free",    "title": "Pest Free",       "desc": "Remove 5 pests in one script",  "emoji": "\U0001f6e1\ufe0f"},
-    {"id": "roi_500",      "title": "ROI King",        "desc": "Achieve 500% ROI",              "emoji": "\U0001f451"},
-    {"id": "gold_5000",    "title": "Millionaire",     "desc": "Accumulate 5000 gold",          "emoji": "\U0001f48e"},
+    # ---- Farm Achievements ----
+    {"id": "first_plant",  "title": "Green Thumb",   "desc": "Plant your first crop",         "emoji": "\U0001f331", "category": "farm"},
+    {"id": "first_harvest","title": "Reaper",         "desc": "Harvest your first crop",       "emoji": "\U0001f33e", "category": "farm"},
+    {"id": "gold_100",     "title": "Gold Digger",    "desc": "Accumulate 100 gold",           "emoji": "\U0001f4b0", "category": "farm"},
+    {"id": "gold_1000",    "title": "Rich Farmer",    "desc": "Accumulate 1000 gold",          "emoji": "\U0001f3e6", "category": "farm"},
+    {"id": "full_field",   "title": "Land Baron",     "desc": "Fill every cell with crops",    "emoji": "\U0001f3de\ufe0f", "category": "farm"},
+    {"id": "roi_50",       "title": "Investor",       "desc": "Achieve 50% ROI",               "emoji": "\U0001f4c8", "category": "farm"},
+    {"id": "roi_200",      "title": "Tycoon",         "desc": "Achieve 200% ROI",              "emoji": "\U0001f680", "category": "farm"},
+    {"id": "level_5",      "title": "Halfway There",  "desc": "Reach level 5",                 "emoji": "\u2b50", "category": "farm"},
+    {"id": "level_10",     "title": "Max Level",      "desc": "Reach level 10",                "emoji": "\U0001f451", "category": "farm"},
+    {"id": "all_crops",    "title": "Botanist",       "desc": "Plant every type of crop",      "emoji": "\U0001f9ec", "category": "farm"},
+    {"id": "missions_5",   "title": "Task Master",    "desc": "Complete 5 missions",           "emoji": "\U0001f4cb", "category": "farm"},
+    {"id": "missions_all", "title": "Completionist",  "desc": "Complete all missions",         "emoji": "\U0001f3c6", "category": "farm"},
+    {"id": "speed_demon",  "title": "Speed Demon",     "desc": "Complete a script in under 50 farm-time seconds", "emoji": "\u26a1", "category": "farm"},
+    {"id": "diverse_farmer","title": "Diverse Farmer", "desc": "Plant all crop types including new ones", "emoji": "\U0001f308", "category": "farm"},
+    {"id": "big_spender",  "title": "Big Spender",     "desc": "Spend 500+ gold in one script", "emoji": "\U0001f4b3", "category": "farm"},
+    {"id": "market_whale", "title": "Market Whale",    "desc": "Earn 200+ gold from market sells in one script", "emoji": "\U0001f40b", "category": "farm"},
+    {"id": "pest_free",    "title": "Pest Free",       "desc": "Remove 5 pests in one script",  "emoji": "\U0001f6e1\ufe0f", "category": "farm"},
+    {"id": "roi_500",      "title": "ROI King",        "desc": "Achieve 500% ROI",              "emoji": "\U0001f451", "category": "farm"},
+    {"id": "gold_5000",    "title": "Millionaire",     "desc": "Accumulate 5000 gold",          "emoji": "\U0001f48e", "category": "farm"},
+    # ---- Python Skill Achievements ----
+    {"id": "py_function_call", "title": "First Steps",     "desc": "Call your first function",                "emoji": "\U0001f4de", "category": "python"},
+    {"id": "py_variables",     "title": "Memory Keeper",   "desc": "Use variables to store values",           "emoji": "\U0001f4e6", "category": "python"},
+    {"id": "py_for_loop",      "title": "Loop Learner",    "desc": "Use a for loop with range()",             "emoji": "\U0001f504", "category": "python"},
+    {"id": "py_if_condition",  "title": "Decision Maker",  "desc": "Use if/elif/else conditions",             "emoji": "\U0001f500", "category": "python"},
+    {"id": "py_while_loop",    "title": "While Warrior",   "desc": "Use a while loop",                        "emoji": "\u267e\ufe0f", "category": "python"},
+    {"id": "py_def_function",  "title": "Function Crafter","desc": "Define your own function with def",       "emoji": "\U0001f3ed", "category": "python"},
+    {"id": "py_print",         "title": "Debug Pro",       "desc": "Use print() to inspect values",           "emoji": "\U0001f5a8\ufe0f", "category": "python"},
+    {"id": "py_arithmetic",    "title": "Math Whiz",       "desc": "Use arithmetic operators (+, -, *, /)",   "emoji": "\U0001f9ee", "category": "python"},
+    {"id": "py_comparison",    "title": "Truth Seeker",    "desc": "Use comparison operators (==, >, <)",     "emoji": "\u2696\ufe0f", "category": "python"},
+    {"id": "py_nested_loops",  "title": "Loop Master",     "desc": "Use nested for loops",                    "emoji": "\U0001f300", "category": "python"},
+    {"id": "py_list_ops",      "title": "List Wrangler",   "desc": "Use list operations (len, append, etc.)", "emoji": "\U0001f4cb", "category": "python"},
+    {"id": "py_dict_ops",      "title": "Data Mapper",     "desc": "Use dictionaries or .keys()/.values()",   "emoji": "\U0001f5c2\ufe0f", "category": "python"},
+    {"id": "py_f_string",      "title": "String Artist",   "desc": "Use f-strings for formatting",            "emoji": "\U0001f3a8", "category": "python"},
+    {"id": "py_master",        "title": "Python Master",   "desc": "Unlock all other Python achievements",    "emoji": "\U0001f40d", "category": "python"},
 ]
 
 # ---------- Missions ----------
@@ -853,15 +869,23 @@ class Farm:
         return data
 
     # ---------- Achievements ----------
-    def check_achievements(self) -> List[Dict[str, Any]]:
+    def check_achievements(self, called_functions: Optional[Set[str]] = None,
+                           code_text: Optional[str] = None) -> List[Dict[str, Any]]:
         """Check and return newly unlocked achievements."""
         newly_unlocked = []
+        cf = called_functions or set()
+        ct = code_text or ""
 
         roi_current = 0.0
         if self.script_cost > 0:
             roi_current = (self.script_gain - self.script_cost) / self.script_cost
 
+        # Count Python achievements already unlocked (for py_master check)
+        py_ids = {a["id"] for a in ACHIEVEMENTS if a["category"] == "python" and a["id"] != "py_master"}
+        py_unlocked_count = len(py_ids & self.unlocked_achievements)
+
         checks = {
+            # --- Farm achievements ---
             "first_plant": self.has_planted,
             "first_harvest": self.has_harvested,
             "gold_100": self.gold >= 100,
@@ -877,11 +901,25 @@ class Farm:
             "speed_demon": self.time < 50 and self.script_gain > 0,
             "diverse_farmer": len(self.planted_crop_types) >= len(CROPS),
             "big_spender": self.script_cost >= 500,
-            # New achievements
             "market_whale": self.market_sell_gain >= 200,
             "pest_free": self.pest_removed_count >= 5,
             "roi_500": roi_current >= 5.0 if self.script_cost > 0 else False,
             "gold_5000": self.gold >= 5000,
+            # --- Python skill achievements ---
+            "py_function_call": len(cf) >= 1,
+            "py_variables": "=" in ct and "==" not in ct.replace("==", ""),
+            "py_for_loop": "for " in ct and "range" in ct,
+            "py_if_condition": "if " in ct,
+            "py_while_loop": "while " in ct,
+            "py_def_function": "def " in ct,
+            "py_print": "print" in cf,
+            "py_arithmetic": any(op in ct for op in [" + ", " - ", " * ", " / ", " // ", " % ", "+=", "-=", "*="]),
+            "py_comparison": any(op in ct for op in ["==", "!=", ">=", "<=", " > ", " < "]),
+            "py_nested_loops": ct.count("for ") >= 2 or (ct.count("for ") >= 1 and ct.count("while ") >= 1),
+            "py_list_ops": any(kw in ct for kw in ["len(", ".append(", "sorted(", "list(", "sum("]),
+            "py_dict_ops": any(kw in ct for kw in [".keys(", ".values(", ".items(", ".get("]),
+            "py_f_string": 'f"' in ct or "f'" in ct,
+            "py_master": py_unlocked_count >= len(py_ids),
         }
 
         for ach in ACHIEVEMENTS:

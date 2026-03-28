@@ -769,18 +769,63 @@ function updateAchievementsList(achievements) {
 
 function renderAchievements() {
   achieveList.innerHTML = "";
-  for (const ach of currentAchievements) {
-    const card = document.createElement("div");
-    card.className = `achieve-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
-    const aTitle = ta(ach.id, "title") || ach.title;
-    const aDesc = ta(ach.id, "desc") || ach.desc;
-    card.innerHTML = `
-      <span class="achieve-emoji">${ach.emoji}</span>
-      <div class="achieve-title">${aTitle}</div>
-      <div class="achieve-desc">${aDesc}</div>
-    `;
-    achieveList.appendChild(card);
+
+  const farmAchs = currentAchievements.filter(a => a.category === "farm" || !a.category);
+  const pyAchs = currentAchievements.filter(a => a.category === "python");
+
+  const farmUnlocked = farmAchs.filter(a => a.unlocked).length;
+  const pyUnlocked = pyAchs.filter(a => a.unlocked).length;
+
+  // Two-column layout
+  const columns = document.createElement("div");
+  columns.className = "achieve-columns";
+
+  // --- Farm column ---
+  const farmCol = document.createElement("div");
+  farmCol.className = "achieve-column";
+  const farmHeader = document.createElement("div");
+  farmHeader.className = "achieve-col-header achieve-col-farm";
+  farmHeader.innerHTML = `<span class="achieve-col-icon">🌾</span> <span>${t("achieve_farm_title") || "Farm Achievements"}</span> <span class="achieve-col-count">${farmUnlocked}/${farmAchs.length}</span>`;
+  farmCol.appendChild(farmHeader);
+
+  const farmGrid = document.createElement("div");
+  farmGrid.className = "achieve-col-grid";
+  for (const ach of farmAchs) {
+    farmGrid.appendChild(createAchieveCard(ach));
   }
+  farmCol.appendChild(farmGrid);
+
+  // --- Python column ---
+  const pyCol = document.createElement("div");
+  pyCol.className = "achieve-column";
+  const pyHeader = document.createElement("div");
+  pyHeader.className = "achieve-col-header achieve-col-python";
+  pyHeader.innerHTML = `<span class="achieve-col-icon">🐍</span> <span>${t("achieve_python_title") || "Python Skills"}</span> <span class="achieve-col-count">${pyUnlocked}/${pyAchs.length}</span>`;
+  pyCol.appendChild(pyHeader);
+
+  const pyGrid = document.createElement("div");
+  pyGrid.className = "achieve-col-grid";
+  for (const ach of pyAchs) {
+    pyGrid.appendChild(createAchieveCard(ach));
+  }
+  pyCol.appendChild(pyGrid);
+
+  columns.appendChild(farmCol);
+  columns.appendChild(pyCol);
+  achieveList.appendChild(columns);
+}
+
+function createAchieveCard(ach) {
+  const card = document.createElement("div");
+  card.className = `achieve-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+  const aTitle = ta(ach.id, "title") || ach.title;
+  const aDesc = ta(ach.id, "desc") || ach.desc;
+  card.innerHTML = `
+    <span class="achieve-emoji">${ach.emoji}</span>
+    <div class="achieve-title">${aTitle}</div>
+    <div class="achieve-desc">${aDesc}</div>
+  `;
+  return card;
 }
 
 achieveBtn.addEventListener("click", () => { renderAchievements(); achieveModal.classList.remove("hidden"); });

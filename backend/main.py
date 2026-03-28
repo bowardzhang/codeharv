@@ -121,7 +121,10 @@ async def run_script(ws: WebSocket):
         )
 
         # --- Check achievements ---
-        new_achievements = farm.check_achievements()
+        new_achievements = farm.check_achievements(
+            called_functions=called_functions,
+            code_text=code_text,
+        )
 
         # --- Build done message ---
         done_msg = {

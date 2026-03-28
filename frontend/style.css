@@ -397,7 +397,7 @@ canvas {
 }
 
 .achieve-modal-content {
-  width: min(640px, 90vw);
+  width: min(780px, 92vw);
 }
 
 .modal-header {
@@ -596,10 +596,57 @@ canvas {
 
 /* ---------- Achievement List ---------- */
 .achieve-list {
+  padding: 12px 16px;
+}
+
+.achieve-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
-  padding: 16px 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.achieve-column {
+  min-width: 0;
+}
+
+.achieve-col-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.achieve-col-farm {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.achieve-col-python {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.achieve-col-icon {
+  font-size: 18px;
+}
+
+.achieve-col-count {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.achieve-col-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
 }
 
 .achieve-card {
@@ -1024,6 +1071,18 @@ body.dark-mode .achieve-card.unlocked {
   background: linear-gradient(135deg, #78350f, #451a03);
 }
 
+body.dark-mode .achieve-col-farm {
+  background: linear-gradient(135deg, #14532d, #166534);
+  border-color: #4ade80;
+  color: #bbf7d0;
+}
+
+body.dark-mode .achieve-col-python {
+  background: linear-gradient(135deg, #1e3a5f, #1e40af);
+  border-color: #60a5fa;
+  color: #bfdbfe;
+}
+
 body.dark-mode .achieve-desc {
   color: #94a3b8;
 }
@@ -1212,7 +1271,7 @@ body.dark-mode .welcome-content {
     grid-template-columns: 1fr;
   }
 
-  .achieve-list {
+  .achieve-columns {
     grid-template-columns: 1fr;
   }
 

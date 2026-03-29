@@ -1,8 +1,8 @@
 ![Screenshot](CodeXFarm_Screenshot.png?raw=true "Screenshot")
 
-# 🌱 Code X Farm
+# 🌱 Code ✖ Farm
 
-**Code X Farm** is a browser-based farming simulation game designed to help users learn **Python programming basics through gameplay**.
+**Code ✖ Farm** is a browser-based farming simulation game designed to help users learn **Python programming basics through gameplay**.
 
 Instead of clicking buttons to farm, players **write Python scripts** to control planting, watering, fertilizing, and harvesting crops.
 Your code directly affects the farm — if your logic is good, your farm thrives.
@@ -252,14 +252,14 @@ http://localhost:8080
 
 ## 🎯 Project Goal
 
-Code X Farm is designed for:
+Code ✖ Farm is designed for:
 
 - **Beginners learning Python** — zero to hero through guided missions
 - **Programming education** — teaching demos and classroom use
 - **Experimenting with automation logic** — optimize your farm for max ROI
 - **Learning through play** — gamification makes coding fun
 
-The long-term vision is to evolve Code X Farm into a code-driven sandbox game where logic, optimization, and strategy matter more than clicks.
+The long-term vision is to evolve Code ✖ Farm into a code-driven sandbox game where logic, optimization, and strategy matter more than clicks.
 
 ---
 

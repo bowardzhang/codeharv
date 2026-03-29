@@ -47,7 +47,7 @@ async function checkPremiumStatus() {
    Editor
 ============================================================ */
 
-const DEFAULT_CODE = `# Welcome to Code X Farm!
+const DEFAULT_CODE = `# Welcome to Code ✖ Farm!
 # Complete missions to learn Python step by step.
 # Mission 1: Plant your first crop!
 
@@ -2019,7 +2019,7 @@ function generateShareImage() {
   ctx.fillStyle = "#22c55e";
   ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("🌱 Code X Farm", w / 2, 45);
+  ctx.fillText("🌱 Code ✖ Farm", w / 2, 45);
 
   // Stats bar at bottom
   const farm = currentFarm || {};
@@ -2056,7 +2056,7 @@ function getShareText() {
   const gold = farm.gold ?? 0;
   const level = farm.level ?? 1;
   const completedMissions = currentMissions ? currentMissions.filter(m => m.completed).length : 0;
-  return `🌱 I'm farming with Python on Code X Farm! Level ${level}, ${gold} gold, ${completedMissions} missions completed. Learn Python by growing a virtual farm!`;
+  return `🌱 I'm farming with Python on Code ✖ Farm! Level ${level}, ${gold} gold, ${completedMissions} missions completed. Learn Python by growing a virtual farm!`;
 }
 
 function getShareUrl() {

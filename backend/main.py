@@ -20,8 +20,138 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 import ast
 import asyncio
+import re
 
 app = FastAPI()
+
+
+def friendly_error(e):
+    """Translate Python errors into beginner-friendly messages."""
+    msg = str(e)
+    lineno = getattr(e, 'lineno', None)
+
+    # --- SyntaxError from ast.parse ---
+    if isinstance(e, SyntaxError):
+        lineno = e.lineno
+        raw = e.msg if hasattr(e, 'msg') else msg
+
+        if 'unexpected indent' in raw:
+            return lineno, (
+                f"Line {lineno}: Indentation error — this line is indented too far.\n"
+                "Hint: Make sure lines inside `if`, `for`, or `while` blocks are "
+                "indented the same amount (usually 4 spaces). Lines that are NOT "
+                "inside a block should start at the very beginning of the line."
+            )
+        if 'expected an indented block' in raw:
+            return lineno, (
+                f"Line {lineno}: Missing indented block — Python expects indented code here.\n"
+                "Hint: After `if`, `for`, `while`, or `def`, the next line must be "
+                "indented (use 4 spaces). For example:\n"
+                "  if True:\n"
+                "      plant(\"wheat\", 0, 0)"
+            )
+        if 'unindent does not match' in raw:
+            return lineno, (
+                f"Line {lineno}: Indentation mismatch — the spaces at the start of this line "
+                "don't match the surrounding code.\n"
+                "Hint: Make sure you use the same number of spaces for all lines in the same block."
+            )
+        if 'invalid syntax' in raw:
+            return lineno, (
+                f"Line {lineno}: Invalid syntax — Python can't understand this line.\n"
+                "Hint: Common causes:\n"
+                "  • Missing colon (:) after `if`, `for`, `while`, or `def`\n"
+                "  • Mismatched parentheses or quotes\n"
+                "  • Typo in a keyword (e.g., `iff` instead of `if`)"
+            )
+        if 'EOL while scanning string' in raw or 'unterminated string' in raw:
+            return lineno, (
+                f"Line {lineno}: Unterminated string — you started a string but didn't close it.\n"
+                "Hint: Every opening quote (\", ') needs a matching closing quote.\n"
+                "  Correct:   plant(\"wheat\", 0, 0)\n"
+                "  Wrong:     plant(\"wheat, 0, 0)"
+            )
+        if 'unexpected EOF' in raw or 'unexpected end of' in raw:
+            return lineno, (
+                f"Line {lineno}: Unexpected end of code — something is incomplete.\n"
+                "Hint: Check for:\n"
+                "  • Unclosed parentheses: plant(\"wheat\", 0, 0  ← missing )\n"
+                "  • An `if`/`for`/`while` with no body below it"
+            )
+        if "'return' outside function" in raw:
+            return lineno, (
+                f"Line {lineno}: 'return' can only be used inside a function.\n"
+                "Hint: You can only use `return` inside a `def` block."
+            )
+        # Generic SyntaxError fallback
+        return lineno, (
+            f"Line {lineno}: Syntax error — {raw}\n"
+            "Hint: Check for typos, missing colons, or mismatched parentheses."
+        )
+
+    # --- ScriptError from executor (already has lineno) ---
+    if hasattr(e, 'lineno') and hasattr(e, 'message'):
+        raw = e.message
+        line = e.lineno
+
+        # Undefined variable
+        m = re.search(r"Undefined variable: '(\w+)'", raw)
+        if m:
+            var_name = m.group(1)
+            return line, (
+                f"Line {line}: Variable '{var_name}' doesn't exist yet.\n"
+                "Hint: You need to create a variable before you can use it. For example:\n"
+                f"  {var_name} = 0   # create the variable first\n"
+                f"  print({var_name})  # now you can use it"
+            )
+
+        # Unknown function
+        m = re.search(r"Unknown function: (\w+)", raw)
+        if m:
+            func_name = m.group(1)
+            return line, (
+                f"Line {line}: Unknown function '{func_name}'.\n"
+                "Hint: Check the spelling. Available farm functions include:\n"
+                "  plant(), water(), harvest(), sell(), wait(), print(), etc.\n"
+                "Click '📖 Crops' to see all available functions."
+            )
+
+        # Division by zero
+        if 'Division by zero' in raw or 'Modulo by zero' in raw:
+            return line, (
+                f"Line {line}: Division by zero — you can't divide a number by 0.\n"
+                "Hint: Check the value of your divisor before dividing."
+            )
+
+        # Unsupported syntax
+        if 'Unsupported syntax' in raw:
+            return line, (
+                f"Line {line}: This type of code is not supported in Code ✖ Farm.\n"
+                "Hint: The farm script supports: variables, if/else, for/while loops, "
+                "functions, and the built-in farm commands."
+            )
+
+        # Exceeded max steps
+        if 'maximum execution steps' in raw:
+            return line, (
+                f"Line {line}: Your script ran too many steps and was stopped.\n"
+                "Hint: Check if you have an infinite loop. Make sure your `while` condition "
+                "eventually becomes False, or use `break` to exit the loop."
+            )
+
+        # While loop exceeded iterations
+        if 'While loop exceeded' in raw:
+            return line, (
+                f"Line {line}: Your while loop ran too many times and was stopped.\n"
+                "Hint: Make sure your while loop condition will eventually become False. "
+                "For example, if you use `while i < 10`, make sure `i` increases inside the loop."
+            )
+
+        # Return original executor message for other ScriptErrors
+        return line, raw
+
+    # --- Fallback for any other error ---
+    return lineno, msg
 
 class AuthRequest(BaseModel):
     username: str
@@ -318,10 +448,11 @@ async def run_script(ws: WebSocket):
                 # Error within a single message handler - send error but keep connection alive
                 executor = None
                 try:
+                    line, message = friendly_error(e)
                     await ws.send_json({
                         "type": "error",
-                        "message": str(e),
-                        "line": getattr(e, "lineno", None)
+                        "message": message,
+                        "line": line
                     })
                 except Exception:
                     pass

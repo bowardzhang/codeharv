@@ -546,8 +546,55 @@ const levelText = document.getElementById("levelText");
 const xpFill = document.getElementById("xpFill");
 const xpText = document.getElementById("xpText");
 
+let _prevGold = null;
+let _goldAnimFrame = null;
+
 function updateResource(gold, time) {
-  resourceEl.textContent = `💰 ${gold} | 🕒 ${Math.round(time)}`;
+  const roundedTime = Math.round(time);
+
+  // If gold hasn't changed or is the first render, just set it directly
+  if (_prevGold === null || _prevGold === gold) {
+    resourceEl.textContent = `💰 ${gold} | 🕒 ${roundedTime}`;
+    _prevGold = gold;
+    return;
+  }
+
+  // Animate the gold number change
+  const startGold = _prevGold;
+  const endGold = gold;
+  _prevGold = gold;
+
+  // Cancel any ongoing animation
+  if (_goldAnimFrame) {
+    cancelAnimationFrame(_goldAnimFrame);
+    _goldAnimFrame = null;
+  }
+
+  const duration = 400; // ms
+  const startTime = performance.now();
+
+  function animateGold(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out cubic for a satisfying deceleration
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const currentGold = Math.round(startGold + (endGold - startGold) * eased);
+
+    resourceEl.textContent = `💰 ${currentGold} | 🕒 ${roundedTime}`;
+
+    // Add a scale bounce effect during animation
+    if (progress < 1) {
+      const scale = 1 + 0.15 * Math.sin(progress * Math.PI);
+      resourceEl.style.transform = `scale(${scale})`;
+      resourceEl.style.display = 'inline-block';
+      _goldAnimFrame = requestAnimationFrame(animateGold);
+    } else {
+      resourceEl.style.transform = 'scale(1)';
+      _goldAnimFrame = null;
+    }
+  }
+
+  _goldAnimFrame = requestAnimationFrame(animateGold);
 }
 
 function updateWeatherDisplay(farm) {

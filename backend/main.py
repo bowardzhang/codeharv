@@ -2,7 +2,12 @@ from time import time
 from farm import Farm, LEVELS, GOLD_INITIAL
 from executor import Executor
 from storage import load_user_farm
-from auth import register, login, get_user_by_token, save_user_progress, load_user_progress, logout, upgrade_to_premium
+from auth import (
+    register, login, get_user_by_token, save_user_progress, load_user_progress,
+    logout, upgrade_to_premium, verify_email, resend_verification,
+    request_password_reset, reset_password, get_user_email,
+)
+from email_service import send_payment_confirmation_email
 from pydantic import BaseModel
 import os
 from pathlib import Path
@@ -156,6 +161,22 @@ def friendly_error(e):
 class AuthRequest(BaseModel):
     username: str
     password: str
+    email: str = ""
+
+class VerifyRequest(BaseModel):
+    username: str
+    code: str
+
+class ResendRequest(BaseModel):
+    username: str
+
+class ForgotPasswordRequest(BaseModel):
+    username_or_email: str
+
+class ResetPasswordRequest(BaseModel):
+    username: str
+    code: str
+    new_password: str
 
 class TokenRequest(BaseModel):
     token: str
@@ -471,7 +492,7 @@ async def run_script(ws: WebSocket):
 
 @app.post("/api/register")
 async def api_register(req: AuthRequest):
-    return register(req.username, req.password)
+    return register(req.username, req.password, req.email)
 
 @app.post("/api/login")
 async def api_login(req: AuthRequest):
@@ -510,6 +531,22 @@ async def api_profile(token: str = ""):
                 "total_scripts_run": user.get("total_scripts_run", 0),
             }
     return {"success": False}
+
+@app.post("/api/verify-email")
+async def api_verify_email(req: VerifyRequest):
+    return verify_email(req.username, req.code)
+
+@app.post("/api/resend-verification")
+async def api_resend_verification(req: ResendRequest):
+    return resend_verification(req.username)
+
+@app.post("/api/forgot-password")
+async def api_forgot_password(req: ForgotPasswordRequest):
+    return request_password_reset(req.username_or_email)
+
+@app.post("/api/reset-password")
+async def api_reset_password(req: ResetPasswordRequest):
+    return reset_password(req.username, req.code, req.new_password)
 
 # ===============================
 # Premium & Stripe API
@@ -577,6 +614,13 @@ async def stripe_webhook(request: Request):
             session_data = event["data"]["object"]
             user_id = int(session_data["metadata"]["user_id"])
             upgrade_to_premium(user_id)
+            # Send payment confirmation email
+            try:
+                email, uname = get_user_email(user_id)
+                if email:
+                    send_payment_confirmation_email(email, uname)
+            except Exception as e:
+                print(f"Payment email error: {e}")
     except Exception as e:
         print(f"Stripe webhook error: {e}")
     return {"received": True}

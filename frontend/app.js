@@ -937,58 +937,88 @@ const authModal = document.getElementById("authModal");
 const authModalClose = document.getElementById("authModalClose");
 const loginBtn = document.getElementById("loginBtn");
 const userDisplayEl = document.getElementById("userDisplay");
-const authUsername = document.getElementById("authUsername");
-const authPassword = document.getElementById("authPassword");
-const authError = document.getElementById("authError");
-const authLoginSubmit = document.getElementById("authLoginSubmit");
-const authRegisterSubmit = document.getElementById("authRegisterSubmit");
 const authLogoutArea = document.getElementById("authLogoutArea");
 const authLogoutBtn = document.getElementById("authLogoutBtn");
 const authCurrentUser = document.getElementById("authCurrentUser");
+const authTabs = document.getElementById("authTabs");
 
 let authToken = localStorage.getItem("codexfarm_token") || null;
 let currentUsername = localStorage.getItem("codexfarm_username") || null;
+let pendingVerifyUsername = null;
+
+// --- Auth tab/form switching ---
+const authFormTitles = {
+  login: "👤 Login",
+  register: "📝 Register",
+  forgot: "🔑 Forgot Password",
+  verify: "📧 Verify Email",
+  reset: "🔑 Reset Password",
+  logoutArea: "👤 Account",
+};
+
+function showAuthForm(formName) {
+  const forms = authModal.querySelectorAll(".auth-form");
+  forms.forEach(f => f.classList.add("hidden"));
+  // For logoutArea, the ID is "authLogoutArea" not "authFormLogoutArea"
+  let targetId;
+  if (formName === "logoutArea") {
+    targetId = "authLogoutArea";
+  } else {
+    targetId = "authForm" + formName.charAt(0).toUpperCase() + formName.slice(1);
+  }
+  const target = document.getElementById(targetId);
+  if (target) target.classList.remove("hidden");
+  // Update title
+  const titleEl = document.getElementById("authModalTitle");
+  if (titleEl) titleEl.textContent = authFormTitles[formName] || "👤 Account";
+  // Update tab active state
+  const tabs = authModal.querySelectorAll(".auth-tab");
+  tabs.forEach(tb => tb.classList.remove("active"));
+  const activeTab = authModal.querySelector(`.auth-tab[data-tab="${formName}"]`);
+  if (activeTab) activeTab.classList.add("active");
+  // Show/hide tabs row
+  if (authTabs) authTabs.style.display = (formName === "verify" || formName === "reset" || formName === "logoutArea") ? "none" : "";
+  // Clear errors
+  authModal.querySelectorAll(".auth-error").forEach(e => { e.textContent = ""; e.classList.remove("visible"); });
+}
+
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.classList.add("visible"); }
+}
 
 function updateAuthUI() {
   if (authToken && currentUsername) {
     const premBadge = isPremium ? " ⭐" : "";
     if (loginBtn) loginBtn.textContent = `👤 ${currentUsername}${premBadge}`;
     if (userDisplayEl) { userDisplayEl.textContent = currentUsername; userDisplayEl.classList.remove("hidden"); }
-    if (authLoginSubmit) authLoginSubmit.style.display = "none";
-    if (authRegisterSubmit) authRegisterSubmit.style.display = "none";
-    if (authLogoutArea) { authLogoutArea.classList.remove("hidden"); }
     if (authCurrentUser) authCurrentUser.textContent = currentUsername;
-    if (authUsername) authUsername.parentElement.style.display = "none";
-    if (authPassword) authPassword.parentElement.style.display = "none";
   } else {
     if (loginBtn) loginBtn.textContent = t("login");
     if (userDisplayEl) userDisplayEl.classList.add("hidden");
-    if (authLoginSubmit) authLoginSubmit.style.display = "";
-    if (authRegisterSubmit) authRegisterSubmit.style.display = "";
-    if (authLogoutArea) authLogoutArea.classList.add("hidden");
-    if (authUsername) authUsername.parentElement.style.display = "";
-    if (authPassword) authPassword.parentElement.style.display = "";
   }
 }
 
-async function doAuth(action) {
-  const username = authUsername.value.trim();
-  const password = authPassword.value.trim();
-  if (!username || !password) {
-    authError.textContent = "Please enter username and password";
-    authError.style.display = "block";
-    return;
+function openAuthModal() {
+  if (authToken && currentUsername) {
+    showAuthForm("logoutArea");
+  } else {
+    showAuthForm("login");
   }
-  authError.style.display = "none";
+  authModal.classList.remove("hidden");
+}
 
+// --- Login ---
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  if (!username || !password) { showAuthError("loginError", "Please enter username and password"); return; }
   try {
-    const res = await fetch(`/api/${action}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch("/api/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password })
     });
     const data = await res.json();
-
     if (data.success) {
       authToken = data.token;
       currentUsername = data.username;
@@ -996,33 +1026,147 @@ async function doAuth(action) {
       localStorage.setItem("codexfarm_username", currentUsername);
       updateAuthUI();
       authModal.classList.add("hidden");
-      showToastNotification(
-        `👤 ${action === "register" ? t("register") : t("login")}`,
-        `Welcome, ${currentUsername}!`,
-        "toast-mission"
-      );
-      // Load saved progress and check premium
+      showToastNotification(`👤 ${t("login")}`, `Welcome, ${currentUsername}!`, "toast-mission");
+      loadCloudProgress();
+      await checkPremiumStatus();
+      updateAuthUI();
+      if (currentMissions.length) updateMissionPanel(currentMissions);
+    } else if (data.pending_verification) {
+      pendingVerifyUsername = data.username;
+      showAuthForm("verify");
+    } else {
+      showAuthError("loginError", data.message);
+    }
+  } catch (e) { showAuthError("loginError", "Network error"); }
+}
+
+// --- Register ---
+async function doRegister() {
+  const username = document.getElementById("regUsername").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
+  if (!username || !email || !password) { showAuthError("regError", "All fields are required"); return; }
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, email })
+    });
+    const data = await res.json();
+    if (data.success && data.pending_verification) {
+      pendingVerifyUsername = data.username;
+      showAuthForm("verify");
+      showToastNotification("📧", t("verification_sent"), "toast-mission");
+    } else if (data.success) {
+      authToken = data.token;
+      currentUsername = data.username;
+      localStorage.setItem("codexfarm_token", authToken);
+      localStorage.setItem("codexfarm_username", currentUsername);
+      updateAuthUI();
+      authModal.classList.add("hidden");
+    } else {
+      showAuthError("regError", data.message);
+    }
+  } catch (e) { showAuthError("regError", "Network error"); }
+}
+
+// --- Email Verification ---
+async function doVerifyEmail() {
+  const code = document.getElementById("verifyCode").value.trim();
+  if (!code || !pendingVerifyUsername) { showAuthError("verifyError", "Please enter the verification code"); return; }
+  try {
+    const res = await fetch("/api/verify-email", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: pendingVerifyUsername, code })
+    });
+    const data = await res.json();
+    if (data.success) {
+      authToken = data.token;
+      currentUsername = data.username;
+      localStorage.setItem("codexfarm_token", authToken);
+      localStorage.setItem("codexfarm_username", currentUsername);
+      pendingVerifyUsername = null;
+      updateAuthUI();
+      authModal.classList.add("hidden");
+      showToastNotification("✅", `Email verified! Welcome, ${currentUsername}!`, "toast-mission");
       loadCloudProgress();
       await checkPremiumStatus();
       updateAuthUI();
       if (currentMissions.length) updateMissionPanel(currentMissions);
     } else {
-      authError.textContent = data.message;
-      authError.style.display = "block";
+      showAuthError("verifyError", data.message);
     }
-  } catch (e) {
-    authError.textContent = "Network error";
-    authError.style.display = "block";
-  }
+  } catch (e) { showAuthError("verifyError", "Network error"); }
 }
 
+async function doResendCode() {
+  if (!pendingVerifyUsername) return;
+  const btn = document.getElementById("resendCodeBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Sending..."; }
+  try {
+    const res = await fetch("/api/resend-verification", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: pendingVerifyUsername })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToastNotification("📧", "New code sent!", "toast-mission");
+    } else {
+      showAuthError("verifyError", data.message);
+    }
+  } catch (e) { showAuthError("verifyError", "Network error"); }
+  if (btn) { btn.disabled = false; btn.textContent = t("resend_code"); }
+}
+
+// --- Forgot Password ---
+async function doForgotPassword() {
+  const input = document.getElementById("forgotInput").value.trim();
+  if (!input) { showAuthError("forgotError", "Please enter your username or email"); return; }
+  try {
+    const res = await fetch("/api/forgot-password", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username_or_email: input })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Show reset form
+      const resetUser = document.getElementById("resetUsername");
+      if (resetUser) resetUser.value = input;
+      showAuthForm("reset");
+      showToastNotification("📧", data.message, "toast-mission");
+    } else {
+      showAuthError("forgotError", data.message);
+    }
+  } catch (e) { showAuthError("forgotError", "Network error"); }
+}
+
+// --- Reset Password ---
+async function doResetPassword() {
+  const username = document.getElementById("resetUsername").value.trim();
+  const code = document.getElementById("resetCode").value.trim();
+  const newPassword = document.getElementById("resetNewPassword").value.trim();
+  if (!username || !code || !newPassword) { showAuthError("resetError", "All fields are required"); return; }
+  try {
+    const res = await fetch("/api/reset-password", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, code, new_password: newPassword })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAuthForm("login");
+      showToastNotification("✅", data.message, "toast-mission");
+    } else {
+      showAuthError("resetError", data.message);
+    }
+  } catch (e) { showAuthError("resetError", "Network error"); }
+}
+
+// --- Cloud Progress ---
 async function loadCloudProgress() {
   if (!authToken) return;
   try {
     const res = await fetch(`/api/load?token=${authToken}`);
     const data = await res.json();
     if (data.success && data.save) {
-      // Queue restore until WebSocket is ready
       pendingCloudRestore = data.save;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "restore", save: pendingCloudRestore }));
@@ -1032,50 +1176,41 @@ async function loadCloudProgress() {
         log("[system] Cloud save queued, waiting for connection...");
       }
     }
-  } catch (e) {
-    console.warn("loadCloudProgress failed:", e);
-  }
+  } catch (e) { console.warn("loadCloudProgress failed:", e); }
 }
 
 async function saveCloudProgress(saveData) {
   if (!authToken) return;
   try {
     const res = await fetch("/api/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: authToken, save: saveData })
     });
     const data = await res.json();
-    if (!data.success) {
-      console.warn("Cloud save failed:", data.message);
-    }
-  } catch (e) {
-    console.warn("Cloud save network error:", e);
-  }
+    if (!data.success) console.warn("Cloud save failed:", data.message);
+  } catch (e) { console.warn("Cloud save network error:", e); }
 }
 
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    updateAuthUI();
-    authModal.classList.remove("hidden");
+// --- Event Listeners ---
+if (loginBtn) loginBtn.addEventListener("click", openAuthModal);
+if (authModalClose) authModalClose.addEventListener("click", () => authModal.classList.add("hidden"));
+if (authModal) authModal.addEventListener("click", (e) => { if (e.target === authModal) authModal.classList.add("hidden"); });
+
+// Tab clicks
+if (authTabs) {
+  authTabs.addEventListener("click", (e) => {
+    const tab = e.target.closest(".auth-tab");
+    if (tab) showAuthForm(tab.dataset.tab);
   });
 }
 
-if (authModalClose) {
-  authModalClose.addEventListener("click", () => authModal.classList.add("hidden"));
-}
-
-if (authModal) {
-  authModal.addEventListener("click", (e) => { if (e.target === authModal) authModal.classList.add("hidden"); });
-}
-
-if (authLoginSubmit) {
-  authLoginSubmit.addEventListener("click", () => doAuth("login"));
-}
-
-if (authRegisterSubmit) {
-  authRegisterSubmit.addEventListener("click", () => doAuth("register"));
-}
+// Form submit buttons
+document.getElementById("loginSubmitBtn")?.addEventListener("click", doLogin);
+document.getElementById("regSubmitBtn")?.addEventListener("click", doRegister);
+document.getElementById("verifySubmitBtn")?.addEventListener("click", doVerifyEmail);
+document.getElementById("resendCodeBtn")?.addEventListener("click", doResendCode);
+document.getElementById("forgotSubmitBtn")?.addEventListener("click", doForgotPassword);
+document.getElementById("resetSubmitBtn")?.addEventListener("click", doResetPassword);
 
 if (authLogoutBtn) {
   authLogoutBtn.addEventListener("click", async () => {
@@ -1093,12 +1228,16 @@ if (authLogoutBtn) {
   });
 }
 
-// Allow Enter key in auth form
-if (authPassword) {
-  authPassword.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") authLoginSubmit.click();
-  });
-}
+// Enter key on login password
+document.getElementById("loginPassword")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doLogin();
+});
+document.getElementById("regPassword")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doRegister();
+});
+document.getElementById("verifyCode")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doVerifyEmail();
+});
 
 // Init auth UI
 updateAuthUI();

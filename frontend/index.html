@@ -198,28 +198,99 @@
 
 <!-- Auth Modal -->
 <div id="authModal" class="modal hidden">
-  <div class="modal-content" style="width:min(380px,90vw);">
+  <div class="modal-content" style="width:min(400px,90vw);">
     <div class="modal-header">
-      <h2 id="authModalTitle">👤 Login</h2>
+      <h2 id="authModalTitle">Account</h2>
       <button class="modal-close" id="authModalClose">&times;</button>
     </div>
     <div style="padding:20px;">
-      <div style="margin-bottom:12px;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username</label>
-        <input id="authUsername" type="text" maxlength="20" placeholder="Enter username" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+      <!-- Tab buttons -->
+      <div id="authTabs" class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Login</button>
+        <button class="auth-tab" data-tab="register">Register</button>
+        <button class="auth-tab" data-tab="forgot">Forgot Password</button>
       </div>
-      <div style="margin-bottom:16px;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Password</label>
-        <input id="authPassword" type="password" maxlength="50" placeholder="Enter password" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+
+      <!-- Login Form -->
+      <div id="authFormLogin" class="auth-form">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username</label>
+          <input id="loginUsername" type="text" maxlength="20" placeholder="Enter username" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Password</label>
+          <input id="loginPassword" type="password" maxlength="50" placeholder="Enter password" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div id="loginError" class="auth-error"></div>
+        <button id="loginSubmitBtn" class="auth-submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">Login</button>
       </div>
-      <div id="authError" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
-      <div style="display:flex;gap:8px;">
-        <button id="authLoginSubmit" style="flex:1;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;">Login</button>
-        <button id="authRegisterSubmit" style="flex:1;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;">Register</button>
+
+      <!-- Register Form -->
+      <div id="authFormRegister" class="auth-form hidden">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username</label>
+          <input id="regUsername" type="text" maxlength="20" placeholder="Choose username" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Email</label>
+          <input id="regEmail" type="email" maxlength="100" placeholder="your@email.com" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Password</label>
+          <input id="regPassword" type="password" maxlength="50" placeholder="Choose password (4+ chars)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div id="regError" class="auth-error"></div>
+        <button id="regSubmitBtn" class="auth-submit-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a);">Register</button>
       </div>
-      <div id="authLogoutArea" class="hidden" style="text-align:center;margin-top:12px;">
-        <p style="font-size:14px;margin-bottom:8px;">Logged in as <b id="authCurrentUser"></b></p>
-        <button id="authLogoutBtn" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Logout</button>
+
+      <!-- Email Verification Form -->
+      <div id="authFormVerify" class="auth-form hidden">
+        <p style="font-size:14px;margin-bottom:12px;color:#64748b;">A verification code has been sent to your email. Enter it below:</p>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Verification Code</label>
+          <input id="verifyCode" type="text" maxlength="6" placeholder="6-digit code" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:18px;text-align:center;letter-spacing:6px;box-sizing:border-box;">
+        </div>
+        <div id="verifyError" class="auth-error"></div>
+        <button id="verifySubmitBtn" class="auth-submit-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a);">Verify Email</button>
+        <button id="resendCodeBtn" style="width:100%;background:none;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-size:13px;cursor:pointer;margin-top:8px;color:#64748b;">Resend Code</button>
+      </div>
+
+      <!-- Forgot Password Form -->
+      <div id="authFormForgot" class="auth-form hidden">
+        <p style="font-size:14px;margin-bottom:12px;color:#64748b;">Enter your username or email to receive a reset code.</p>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username or Email</label>
+          <input id="forgotInput" type="text" maxlength="100" placeholder="Username or email" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div id="forgotError" class="auth-error"></div>
+        <button id="forgotSubmitBtn" class="auth-submit-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">Send Reset Code</button>
+      </div>
+
+      <!-- Reset Password Form -->
+      <div id="authFormReset" class="auth-form hidden">
+        <p style="font-size:14px;margin-bottom:12px;color:#64748b;">Enter the reset code from your email and choose a new password.</p>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Username</label>
+          <input id="resetUsername" type="text" maxlength="20" placeholder="Your username" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Reset Code</label>
+          <input id="resetCode" type="text" maxlength="6" placeholder="6-digit code" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;text-align:center;letter-spacing:6px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">New Password</label>
+          <input id="resetNewPassword" type="password" maxlength="50" placeholder="New password (4+ chars)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div id="resetError" class="auth-error"></div>
+        <button id="resetSubmitBtn" class="auth-submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">Reset Password</button>
+      </div>
+
+      <!-- Logged-in area -->
+      <div id="authLogoutArea" class="auth-form hidden">
+        <div style="text-align:center;padding:20px 0;">
+          <p style="font-size:16px;margin-bottom:12px;">Logged in as <b id="authCurrentUser"></b></p>
+          <button id="authLogoutBtn" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:10px 32px;font-size:14px;font-weight:600;cursor:pointer;">Logout</button>
+        </div>
       </div>
     </div>
   </div>

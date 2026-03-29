@@ -31,7 +31,6 @@ def init_db():
             unlocked_achievements TEXT DEFAULT '[]',
             planted_crop_types TEXT DEFAULT '[]',
             active_mission_idx INTEGER DEFAULT 0,
-            experienced_seasons TEXT DEFAULT '[]',
             total_harvests INTEGER DEFAULT 0,
             total_scripts_run INTEGER DEFAULT 0,
             is_premium INTEGER DEFAULT 0
@@ -139,7 +138,6 @@ def save_user_progress(token: str, save_data: dict):
                 unlocked_achievements = ?,
                 planted_crop_types = ?,
                 active_mission_idx = ?,
-                experienced_seasons = ?,
                 total_harvests = COALESCE(total_harvests, 0) + ?,
                 total_scripts_run = COALESCE(total_scripts_run, 0) + 1
             WHERE id = ?
@@ -152,7 +150,6 @@ def save_user_progress(token: str, save_data: dict):
             json.dumps(save_data.get("unlocked_achievements", [])),
             json.dumps(save_data.get("planted_crop_types", [])),
             save_data.get("active_mission_idx", 0),
-            json.dumps(save_data.get("experienced_seasons", [])),
             save_data.get("harvests_this_run", 0),
             user["id"]
         ))
@@ -176,7 +173,6 @@ def load_user_progress(token: str) -> dict | None:
         "unlocked_achievements": json.loads(user["unlocked_achievements"] or "[]"),
         "planted_crop_types": json.loads(user["planted_crop_types"] or "[]"),
         "active_mission_idx": user["active_mission_idx"],
-        "experienced_seasons": json.loads(user.get("experienced_seasons", "[]") if user.get("experienced_seasons") else "[]"),
         "username": user["username"],
         "total_harvests": user.get("total_harvests", 0),
         "total_scripts_run": user.get("total_scripts_run", 0),

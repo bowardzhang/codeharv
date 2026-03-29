@@ -34,6 +34,10 @@ class CheckoutRequest(BaseModel):
     token: str
     return_url: str = ""
 
+class SaveRequest(BaseModel):
+    token: str = ""
+    save: dict = {}
+
 # ===============================
 # API
 # ===============================
@@ -348,9 +352,11 @@ async def api_logout(req: TokenRequest):
     return {"success": True}
 
 @app.post("/api/save")
-async def api_save(token: str = "", save: dict = {}):
-    if token:
-        save_user_progress(token, save)
+async def api_save(req: SaveRequest):
+    if req.token:
+        result = save_user_progress(req.token, req.save)
+        if not result:
+            return {"success": False, "message": "Invalid token or save failed"}
     return {"success": True}
 
 @app.get("/api/load")

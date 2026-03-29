@@ -975,22 +975,36 @@ async function loadCloudProgress() {
     const res = await fetch(`/api/load?token=${authToken}`);
     const data = await res.json();
     if (data.success && data.save) {
-      // Send restore to websocket
-      ws.send(JSON.stringify({ type: "restore", save: data.save }));
-      log("[system] Cloud save loaded");
+      // Queue restore until WebSocket is ready
+      pendingCloudRestore = data.save;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "restore", save: pendingCloudRestore }));
+        pendingCloudRestore = null;
+        log("[system] Cloud save loaded");
+      } else {
+        log("[system] Cloud save queued, waiting for connection...");
+      }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.warn("loadCloudProgress failed:", e);
+  }
 }
 
 async function saveCloudProgress(saveData) {
   if (!authToken) return;
   try {
-    await fetch(`/api/save?token=${authToken}`, {
+    const res = await fetch("/api/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ save: saveData })
+      body: JSON.stringify({ token: authToken, save: saveData })
     });
-  } catch (e) { /* ignore */ }
+    const data = await res.json();
+    if (!data.success) {
+      console.warn("Cloud save failed:", data.message);
+    }
+  } catch (e) {
+    console.warn("Cloud save network error:", e);
+  }
 }
 
 if (loginBtn) {
@@ -1280,18 +1294,26 @@ function addHarvestParticles(x, y) {
 const protocol = location.protocol === "https:" ? "wss" : "ws";
 let ws;
 let wsReconnectTimer = null;
+let pendingCloudRestore = null;
 
 function connectWebSocket() {
   ws = new WebSocket(`${protocol}://${location.host}/ws/run`);
 
   ws.onopen = () => {
     log(t("connected"));
-    // Try to restore saved game state
-    const saved = localStorage.getItem("codexfarm_save");
-    if (saved) {
-      try {
-        ws.send(JSON.stringify({ type: "restore", save: JSON.parse(saved) }));
-      } catch(e) { /* ignore corrupt save */ }
+    // Flush queued cloud restore (from login before ws was ready)
+    if (pendingCloudRestore) {
+      ws.send(JSON.stringify({ type: "restore", save: pendingCloudRestore }));
+      pendingCloudRestore = null;
+      log("[system] Cloud save loaded");
+    } else {
+      // Try to restore saved game state from localStorage
+      const saved = localStorage.getItem("codexfarm_save");
+      if (saved) {
+        try {
+          ws.send(JSON.stringify({ type: "restore", save: JSON.parse(saved) }));
+        } catch(e) { /* ignore corrupt save */ }
+      }
     }
   };
 

@@ -828,6 +828,51 @@ const cropData = {
   golden_apple: { emoji: "🍎", cost: 25, gain: 60, speed_key: "very_slow", required_level: 9 },
 };
 
+const cropNameTranslations = {
+  zh: {
+    grass: "草",
+    wheat: "小麦",
+    carrot: "胡萝卜",
+    cabbage: "卷心菜",
+    strawberry: "草莓",
+    eggplant: "茄子",
+    tomato: "番茄",
+    sunflower: "向日葵",
+    pumpkin: "南瓜",
+    golden_apple: "金苹果",
+  },
+  de: {
+    grass: "Gras",
+    wheat: "Weizen",
+    carrot: "Karotte",
+    cabbage: "Kohl",
+    strawberry: "Erdbeere",
+    eggplant: "Aubergine",
+    tomato: "Tomate",
+    sunflower: "Sonnenblume",
+    pumpkin: "Kürbis",
+    golden_apple: "Goldener Apfel",
+  },
+  fr: {
+    grass: "Herbe",
+    wheat: "Blé",
+    carrot: "Carotte",
+    cabbage: "Chou",
+    strawberry: "Fraise",
+    eggplant: "Aubergine",
+    tomato: "Tomate",
+    sunflower: "Tournesol",
+    pumpkin: "Citrouille",
+    golden_apple: "Pomme d'or",
+  },
+};
+
+function formatCropName(englishName) {
+  if (currentLang === "en") return englishName;
+  const translatedName = cropNameTranslations[currentLang]?.[englishName];
+  return translatedName ? `${englishName} (${translatedName})` : englishName;
+}
+
 function buildCropList() {
   cropList.innerHTML = "";
   const playerLevel = (currentFarm && currentFarm.level) || 1;
@@ -841,7 +886,7 @@ function buildCropList() {
       card.innerHTML = `
         <span class="crop-emoji" style="filter:grayscale(0.8);opacity:0.5;">${info.emoji}</span>
         <div class="crop-info">
-          <div class="crop-name">${name} <span class="crop-tag crop-tag-locked">🔒 Lv.${info.required_level}</span></div>
+          <div class="crop-name">${formatCropName(name)} <span class="crop-tag crop-tag-locked">🔒 Lv.${info.required_level}</span></div>
           <div class="crop-stats" style="color:#94a3b8;">${t("requires_level")} ${info.required_level}</div>
         </div>
       `;
@@ -849,7 +894,7 @@ function buildCropList() {
       card.innerHTML = `
         <span class="crop-emoji">${info.emoji}</span>
         <div class="crop-info">
-          <div class="crop-name">${name}</div>
+          <div class="crop-name">${formatCropName(name)}</div>
           <div class="crop-stats">
             ${t("cost")}: ${info.cost}g | ${t("gain")}: ${info.gain}g<br>
             ${t("speed")}: ${t(info.speed_key)}<br>
@@ -979,7 +1024,7 @@ function updateMarketList() {
     card.innerHTML = `
       <span class="market-emoji">${info.emoji}</span>
       <div>
-        <div class="market-name">${name}</div>
+        <div class="market-name">${formatCropName(name)}</div>
         <div class="market-price">
           ${t("base_price")}: ${basePrice}g<br>
           ${t("current_price")}: <span class="${priceClass}">${currentPrice}g ${arrow}</span>
@@ -1724,7 +1769,7 @@ async function wsOnMessage(e) {
         );
 
         if (lu.newly_unlocked_crops && lu.newly_unlocked_crops.length > 0) {
-          const unlockedLabel = lu.newly_unlocked_crops.join(", ");
+          const unlockedLabel = lu.newly_unlocked_crops.map(formatCropName).join(", ");
           log(`🌱 ${t("new_crops_unlocked")}: ${unlockedLabel}`, "#86efac");
           showToastNotification(
             `🌱 ${t("new_crops_unlocked")}`,
@@ -2669,12 +2714,12 @@ function buildCropPicker() {
     const btn = document.createElement("button");
     btn.className = "crop-pick-item" + (isLocked ? " crop-pick-locked" : "");
     if (isLocked) {
-      btn.innerHTML = `<span style="filter:grayscale(0.8);opacity:0.5;">${info.emoji}</span> <span style="color:#94a3b8;">${name}</span> <span class="crop-pick-cost">🔒 Lv.${info.required_level}</span>`;
+      btn.innerHTML = `<span style="filter:grayscale(0.8);opacity:0.5;">${info.emoji}</span> <span style="color:#94a3b8;">${formatCropName(name)}</span> <span class="crop-pick-cost">🔒 Lv.${info.required_level}</span>`;
       btn.disabled = true;
       btn.style.cursor = "not-allowed";
       btn.style.opacity = "0.55";
     } else {
-      btn.innerHTML = `<span>${info.emoji}</span> <span>${name}</span> <span class="crop-pick-cost">${info.cost}g</span>`;
+      btn.innerHTML = `<span>${info.emoji}</span> <span>${formatCropName(name)}</span> <span class="crop-pick-cost">${info.cost}g</span>`;
       btn.addEventListener("click", () => {
         insertActionCode("plant", name);
       });

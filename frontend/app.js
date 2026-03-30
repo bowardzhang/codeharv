@@ -54,6 +54,54 @@ const DEFAULT_CODE = `# Welcome to Code ✖ Farm!
 plant("grass", 0, 0)
 `;
 
+const KNOWN_SCRIPT_HEADERS = new Set(
+  Object.values(I18N)
+    .map(lang => [lang.default_code_comment1, lang.default_code_comment2, lang.default_code_comment3].join("\n"))
+    .filter(Boolean)
+);
+let lastManagedScriptHeader = DEFAULT_CODE.split("\n").slice(0, 3).join("\n");
+
+function asCommentLine(text) {
+  const clean = String(text || "").replace(/^\s*#\s?/, "").trim();
+  return `# ${clean}`;
+}
+
+function buildScriptHeader(activeMission) {
+  const missionTitle = activeMission ? (tm(activeMission.id || "", "title") || activeMission.title) : "";
+  const missionLabel = String(t("current_mission") || "Current Mission")
+    .replace(/^📋\s*/, "")
+    .replace(/[：:]\s*$/, "")
+    .trim();
+  return [
+    asCommentLine(t("default_code_comment1")),
+    asCommentLine(t("default_code_comment2")),
+    asCommentLine(`${missionLabel}: ${missionTitle}`),
+  ].join("\n");
+}
+
+function syncEditorScriptHeader(activeMission) {
+  if (!activeMission) return;
+  const currentCode = editor.getValue().replace(/\r\n/g, "\n");
+  const nextHeader = buildScriptHeader(activeMission);
+  const replaceCandidates = new Set([...KNOWN_SCRIPT_HEADERS, lastManagedScriptHeader].filter(Boolean));
+
+  for (const header of replaceCandidates) {
+    if (!currentCode.startsWith(header)) continue;
+    const remainder = currentCode.slice(header.length);
+    const nextCode = `${nextHeader}${remainder}`;
+    if (nextCode !== currentCode) {
+      editor.setValue(nextCode);
+    }
+    lastManagedScriptHeader = nextHeader;
+    return;
+  }
+
+  if (!currentCode.trim()) {
+    editor.setValue(`${nextHeader}\n\n`);
+    lastManagedScriptHeader = nextHeader;
+  }
+}
+
 const editor = monaco.editor.create(document.getElementById('editor'), {
   value: DEFAULT_CODE,
   language: 'python',
@@ -734,6 +782,8 @@ function updateMissionPanel(missions) {
     hintBtn.style.display = "";
     document.getElementById("loadHintBtn").style.display = "";
   }
+
+  syncEditorScriptHeader(active);
 }
 
 hintBtn.addEventListener("click", () => {

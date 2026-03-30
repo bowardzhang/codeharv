@@ -320,10 +320,20 @@ function drawCellHighlight(x, y) {
 }
 
 function drawFloatingTexts() {
+  const now = performance.now();
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  for (const ft of floatingTexts) {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    if (typeof ft.expiresAt === "number") {
+      const remaining = (ft.expiresAt - now) / 1000;
+      if (remaining <= 0) {
+        floatingTexts.splice(i, 1);
+        continue;
+      }
+      ft.life = Math.min(ft.life ?? remaining, remaining);
+    }
     const ml = ft.maxLife || 1.0;
     const progress = 1 - ft.life / ml;
     // Scale: pop up then shrink
@@ -478,6 +488,7 @@ function drawWeatherOverlay(weather) {
 }
 
 function drawScene(farm = EMPTY_FARM) {
+  advanceVisualEffects();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawWeatherOverlay(farm.weather || "sunny");
@@ -521,7 +532,14 @@ function drawScene(farm = EMPTY_FARM) {
 }
 
 /* ---------- floating text animation ---------- */
-let lastFrameTime = performance.now();
+let lastVisualUpdateTime = performance.now();
+
+function advanceVisualEffects() {
+  const now = performance.now();
+  const dt = Math.max(0, Math.min((now - lastVisualUpdateTime) / 1000, 0.2));
+  lastVisualUpdateTime = now;
+  updateFloatingTexts(dt);
+}
 
 function updateFloatingTexts(dt) {
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
@@ -533,9 +551,6 @@ function updateFloatingTexts(dt) {
 }
 
 function animate(now) {
-  const dt = (now - lastFrameTime) / 1000;
-  lastFrameTime = now;
-  updateFloatingTexts(dt);
   drawScene(currentFarm);
   requestAnimationFrame(animate);
 }
@@ -1467,6 +1482,7 @@ bootstrap();
 function addHarvestParticles(x, y) {
   const p = gridToScreen(x, y);
   const sparkles = ["✨", "⭐", "💫"];
+  const now = performance.now();
   for (let i = 0; i < 3; i++) {
     floatingTexts.push({
       x: p.x + (Math.random() - 0.5) * 40,
@@ -1474,7 +1490,8 @@ function addHarvestParticles(x, y) {
       text: sparkles[i % sparkles.length],
       life: 0.8, maxLife: 0.8,
       vy: -50 - Math.random() * 30,
-      color: "gold"
+      color: "gold",
+      expiresAt: now + 800
     });
   }
 }
@@ -1562,11 +1579,13 @@ async function wsOnMessage(e) {
     if (goldDelta !== 0) {
       const p = gridToScreen(msg.event.x, msg.event.y);
       const sign = (goldDelta > 0) ? '+' : '';
+      const now = performance.now();
       floatingTexts.push({
         x: p.x, y: p.y - 20,
         text: `${sign}${goldDelta} 💰`,
         life: 0.7, maxLife: 0.7, vy: -60,
-        color: goldDelta > 0 ? "#22c55e" : "#ef4444"
+        color: goldDelta > 0 ? "#22c55e" : "#ef4444",
+        expiresAt: now + 700
       });
       if (goldDelta > 0) {
         addHarvestParticles(msg.event.x, msg.event.y);

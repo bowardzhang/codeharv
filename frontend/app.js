@@ -478,6 +478,7 @@ function drawWeatherOverlay(weather) {
 }
 
 function drawScene(farm = EMPTY_FARM) {
+  advanceVisualEffects();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawWeatherOverlay(farm.weather || "sunny");
@@ -521,7 +522,14 @@ function drawScene(farm = EMPTY_FARM) {
 }
 
 /* ---------- floating text animation ---------- */
-let lastFrameTime = performance.now();
+let lastVisualUpdateTime = performance.now();
+
+function advanceVisualEffects() {
+  const now = performance.now();
+  const dt = Math.max(0, Math.min((now - lastVisualUpdateTime) / 1000, 0.2));
+  lastVisualUpdateTime = now;
+  updateFloatingTexts(dt);
+}
 
 function updateFloatingTexts(dt) {
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
@@ -533,9 +541,6 @@ function updateFloatingTexts(dt) {
 }
 
 function animate(now) {
-  const dt = (now - lastFrameTime) / 1000;
-  lastFrameTime = now;
-  updateFloatingTexts(dt);
   drawScene(currentFarm);
   requestAnimationFrame(animate);
 }

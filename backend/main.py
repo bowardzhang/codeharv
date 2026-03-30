@@ -294,6 +294,8 @@ async def run_script(ws: WebSocket):
 
     def start_idle_ticker():
         nonlocal idle_ticker_task, idle_stop_event
+        if idle_ticker_task and not idle_ticker_task.done():
+            return
         idle_stop_event = asyncio.Event()
         idle_ticker_task = asyncio.create_task(
             idle_farm_ticker(ws, farm, idle_stop_event)
@@ -482,6 +484,7 @@ async def run_script(ws: WebSocket):
                     executor = None
                     stop_idle_ticker()
                     await ws.send_json({"type": "done", "farm": farm.snapshot()})
+                    start_idle_ticker()
 
                 # ==============================
                 # RESTORE (client save data)
@@ -515,6 +518,8 @@ async def run_script(ws: WebSocket):
                         "message": message,
                         "line": line
                     })
+                    # Keep farm simulation alive after script errors.
+                    start_idle_ticker()
                 except Exception:
                     pass
 

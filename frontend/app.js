@@ -1722,6 +1722,16 @@ async function wsOnMessage(e) {
           lu.title,
           "toast-levelup"
         );
+
+        if (lu.newly_unlocked_crops && lu.newly_unlocked_crops.length > 0) {
+          const unlockedLabel = lu.newly_unlocked_crops.join(", ");
+          log(`🌱 ${t("new_crops_unlocked")}: ${unlockedLabel}`, "#86efac");
+          showToastNotification(
+            `🌱 ${t("new_crops_unlocked")}`,
+            unlockedLabel,
+            "toast-mission"
+          );
+        }
       }
       sfxLevelUp();
     }

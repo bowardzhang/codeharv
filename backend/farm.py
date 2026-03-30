@@ -631,10 +631,16 @@ class Farm:
             old_level = self.level
             self.level = new_level
             title = LEVELS[new_level - 1]["title"]
+            newly_unlocked_crops = [
+                crop_name
+                for crop_name, cfg in CROPS.items()
+                if old_level < cfg.get("required_level", 1) <= new_level
+            ]
             return {
                 "old_level": old_level,
                 "new_level": new_level,
                 "title": title,
+                "newly_unlocked_crops": newly_unlocked_crops,
             }
         return None
 

@@ -323,10 +323,16 @@ function drawFloatingTexts() {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "20px serif";
   for (const ft of floatingTexts) {
-    ctx.globalAlpha = ft.life;
+    const ml = ft.maxLife || 1.0;
+    const progress = 1 - ft.life / ml;
+    // Scale: pop up then shrink
+    const scale = progress < 0.15 ? (1 + 0.4 * Math.sin(progress / 0.15 * Math.PI)) : (1.0 - progress * 0.3);
+    const alpha = Math.max(0, ft.life / ml);
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = ft.color || "gold";
+    const fontSize = Math.round(20 * scale);
+    ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.fillText(ft.text, ft.x, ft.y);
   }
   ctx.restore();
@@ -1466,8 +1472,8 @@ function addHarvestParticles(x, y) {
       x: p.x + (Math.random() - 0.5) * 40,
       y: p.y - 10 - Math.random() * 20,
       text: sparkles[i % sparkles.length],
-      life: 1.2,
-      vy: -30 - Math.random() * 20,
+      life: 0.8, maxLife: 0.8,
+      vy: -50 - Math.random() * 30,
       color: "gold"
     });
   }
@@ -1559,8 +1565,8 @@ async function wsOnMessage(e) {
       floatingTexts.push({
         x: p.x, y: p.y - 20,
         text: `${sign}${goldDelta} 💰`,
-        life: 1.0, vy: -40,
-        color: goldDelta > 0 ? "#22c55e" : "gold"
+        life: 0.7, maxLife: 0.7, vy: -60,
+        color: goldDelta > 0 ? "#22c55e" : "#ef4444"
       });
       if (goldDelta > 0) {
         addHarvestParticles(msg.event.x, msg.event.y);

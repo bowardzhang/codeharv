@@ -345,20 +345,32 @@ class Executor:
                 result["line"] = line_no
             return result
 
+        try:
+            ev = self._dispatch_farm_call(func, args, node)
+        except ValueError as e:
+            raise ScriptError(node, str(e))
+
+        # add line info into the event
+        if isinstance(ev, dict):
+            ev["line"] = line_no
+        return ev
+
+    def _dispatch_farm_call(self, func, args, node):
+        """Dispatch a built-in farm/utility function call."""
         if func == "plant":
-            ev = self.farm.plant(*args)
+            return self.farm.plant(*args)
         elif func == "water":
-            ev = self.farm.water(*args)
+            return self.farm.water(*args)
         elif func == "fertilize":
-            ev = self.farm.fertilize(*args)
+            return self.farm.fertilize(*args)
         elif func == "harvest":
-            ev = self.farm.harvest(*args)
+            return self.farm.harvest(*args)
         elif func == "wait":
-            ev = self.farm.wait(*args)
+            return self.farm.wait(*args)
         elif func == "is_mature":
             return self.farm.is_mature(*args)
         elif func == "clear":
-            ev = self.farm.clear_field(*args)
+            return self.farm.clear_field(*args)
         elif func == "get_weather":
             return self.farm.get_weather()
         elif func == "get_status":
@@ -376,13 +388,13 @@ class Executor:
         elif func == "get_price":
             return self.farm.get_price(*args)
         elif func == "sell":
-            ev = self.farm.sell(*args)
+            return self.farm.sell(*args)
         elif func == "get_market":
             return self.farm.get_market()
         elif func == "has_pest":
             return self.farm.has_pest(*args)
         elif func == "remove_pest":
-            ev = self.farm.remove_pest(*args)
+            return self.farm.remove_pest(*args)
         elif func == "get_pests":
             return self.farm.get_pests()
         elif func == "print":
@@ -452,11 +464,6 @@ class Executor:
                 raise ScriptError(node, str(e))
         else:
             raise ScriptError(node, f"Unknown function: {func}")
-
-        # add line info into the event
-        if isinstance(ev, dict):
-            ev["line"] = line_no
-        return ev
 
     def _apply_binop(self, op, left, right, node):
         if isinstance(op, ast.Add): return left + right

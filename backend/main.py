@@ -152,6 +152,46 @@ def friendly_error(e):
                 "For example, if you use `while i < 10`, make sure `i` increases inside the loop."
             )
 
+        # --- Farm action errors ---
+        if 'Nothing to harvest' in raw:
+            return line, (
+                f"Line {line}: There's no crop here to harvest.\n"
+                "Hint: You can only harvest a cell that has a planted crop. "
+                "Use `if is_mature(x, y):` to check before harvesting."
+            )
+        if 'Crop not mature' in raw:
+            return line, (
+                f"Line {line}: This crop isn't ready to harvest yet.\n"
+                "Hint: Crops need time to grow. Use `water(x, y)` and `wait(seconds)` "
+                "to help them grow, then check with `is_mature(x, y)` before harvesting."
+            )
+        if 'Nothing to water' in raw:
+            return line, (
+                f"Line {line}: There's no crop here to water.\n"
+                "Hint: You need to `plant()` a crop first before you can water it."
+            )
+        if 'Cell already occupied' in raw:
+            return line, (
+                f"Line {line}: This cell already has a crop planted.\n"
+                "Hint: Each cell can only hold one crop. Use `harvest(x, y)` or "
+                "`clear()` to make room for a new crop."
+            )
+        if 'Not enough gold' in raw:
+            return line, (
+                f"Line {line}: You don't have enough gold for this action.\n"
+                "Hint: Harvest mature crops to earn gold. Use `get_gold()` to check your balance."
+            )
+        if 'Unknown crop' in raw:
+            return line, (
+                f"Line {line}: {raw}\n"
+                "Hint: Click '📖 Crops' to see all available crop names."
+            )
+        if 'requires level' in raw:
+            return line, (
+                f"Line {line}: {raw}\n"
+                "Hint: Complete missions and earn XP to level up and unlock more crops!"
+            )
+
         # Return original executor message for other ScriptErrors
         return line, raw
 
